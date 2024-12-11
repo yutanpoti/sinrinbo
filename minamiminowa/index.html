@@ -69,7 +69,7 @@
                     // Use flatgeobuf JavaScript API to iterate features as geojson.
                     // Because we specify a bounding box, flatgeobuf will only fetch the relevant subset of data,
                     // rather than the entire file.
-                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/fgbDatas/sinrinbo_minamiminowa_202409_test_JA.fgb', fgBoundingBox());
+                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minamiminowa/sinrinbo_minamiminowa_202409_test_JA.fgb', fgBoundingBox());
                     //上記のFGBのリンク元々'./fude_2022_20.fgb'　本物https://habs.rad.naro.go.jp/spatial_data/fudepoly47/fude_2022_20.fgb
                     const colorScale = ((d) => {
                         return d > 199  ? '#8b4513' :
