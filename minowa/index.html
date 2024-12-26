@@ -1,7 +1,7 @@
 <html lang="ja"> <!--めも：？？？は修正検討。★★★は運用時のデータ入れ替えや設定でいじるところ　　-->
     <head><!--めも：headはページ閲覧で見えないもの。⇔bodyは見える。-->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/> <!-- めも：文字コード指定。日本語表示できるように。？？？フルスクリーン固定にしたい。勉強用index参照 -->
-        <title>ちいもりず_南箕輪村2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
+        <title>ちいもりず_箕輪町2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" /><!--めも：スタイルシートとして、href～のデータを読み込む-->
         <link rel="stylesheet" href="index.css" />
         <link rel="stylesheet" href="table.css" /><!--めも：カラム地図表示用のスタイルシート。要らないかも？-->
@@ -83,7 +83,7 @@
                 // 地図オブジェクトを作成し、中心地点とズームレベルを設定。
                 // ★★★めも：初期表示は南箕輪村辺（ズームレベル16/35.8836/137.9419）。市町村によって変更する★★★                
                 // 基本的なOSM Leaflet地図
-                let map = L.map('map').setView([35.8836, 137.9419], 16);//めも：大芝中心に変更
+                let map = L.map('map').setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
 
 
                 // 2. 地図の背景を表示
@@ -244,7 +244,7 @@
                     //★★★GitHubPagesで公開している森林簿FGBを取得するよう指定★★★。
                     // flatgeobufのJavaScript APIを使用して、geojsonとしてフィーチャーを反復処理
                     // バウンディングボックスを指定するため、flatgeobufは関連するデータのサブセットのみを取得し、全ファイルを取得しません。
-                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minamiminowa/sinrinbo_minamiminowa_202409_full.fgb', fgBoundingBox());
+                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202409_minowa_full.fgb', fgBoundingBox());
 
                     //5.スタイルの設定（★★★パターン増やす）
 
