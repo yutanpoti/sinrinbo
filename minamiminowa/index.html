@@ -302,6 +302,15 @@
                     });
                 });
 
+                
+                // スケール（縮尺）コントロールを追加
+                L.control.scale({
+                    position: 'bottomleft', // スケールを左下に表示
+                    metric: true,           // メートル法（キロメートル）を使用
+                    imperial: false         // マイルなどの単位を非表示
+                }).addTo(map);
+
+                
                 // ここからGPS追跡機能の実装。50行くらい。
                 let gpsEnabled = false; // GPS追跡の状態を管理
                 let gpsMarker = null; // 現在地を表示するマーカー
