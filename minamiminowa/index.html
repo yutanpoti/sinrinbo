@@ -198,9 +198,9 @@
                     "L_森林経営計画": (feature) => {
                         const value = feature.properties["L_森林経営計画"];
                         return {
-                            color: value === 1 ? 'blue' : 'gray', // 値が1なら青、その他は灰色
+                            color: value == 1 ? 'blue' : 'gray', // 値が1なら青、その他は灰色。==（緩やかな等価比較）文字列の1でもTRUEになる
                             weight: 1,
-                            fillOpacity: value === 1 ? 0.4 : 0.2, // 視覚的な区別のため透明度を変更（任意）
+                            fillOpacity: value == 1 ? 0.4 : 0.2, // 視覚的な区別のため透明度を変更（任意）。==（緩やかな等価比較）文字列の1でもTRUEになる
                         };
                     },
                     "L_施業種": (feature) => {
