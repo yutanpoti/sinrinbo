@@ -1,7 +1,7 @@
 <html lang="ja"> <!--めも：？？？は修正検討。★★★は運用時のデータ入れ替えや設定でいじるところ　　-->
     <head><!--めも：headはページ閲覧で見えないもの。⇔bodyは見える。-->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/> <!-- めも：文字コード指定。日本語表示できるように。？？？フルスクリーン固定にしたい。勉強用index参照 -->
-        <title>ちいもりず_箕輪町2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
+        <title>ちいもりず_南箕輪村2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" /><!--めも：スタイルシートとして、href～のデータを読み込む-->
         <link rel="stylesheet" href="index.css" />
         <link rel="stylesheet" href="table.css" /><!--めも：カラム地図表示用のスタイルシート。要らないかも？-->
@@ -22,7 +22,7 @@
             }
             
             #basemap-controls {
-            font-size: 18px; /* ラベルのフォントサイズを大きく */
+            font-size: 24px; /* ラベルのフォントサイズを大きく */
             line-height: 1.8; /* 各行の間隔を広げる */
             }
 
@@ -33,13 +33,13 @@
             }
 
             .leaflet-popup-content {
-                font-size: 16px; /* フォントサイズを大きく */
+                font-size: 20px; /* フォントサイズを大きく */
                 line-height: 1.6; /* 行間を広げる */
                 padding: 5px; /* 内側の余白を追加 */
             }
 
             .leaflet-popup-content-wrapper {
-                max-width: 600px; /* ポップアップの最大幅を広げる */
+                max-width: 800px; /* ポップアップの最大幅を広げる */
                 padding: 5px; /* 内側の余白を調整 */
             }
 
@@ -55,19 +55,19 @@
     <body>
         <div id="map"></div><!-- めも：DIVはブロックの目印。id="map"は「ここに地図を表示してください」という目印 -->
         <!-- めも：現在地表示のためのボタン -->
-        <button id="gpsButton" style="position: absolute; top: 20px; left: 50px; z-index: 1000;font-size: 16px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
+        <button id="gpsButton" style="position: absolute; top: 20px; left: 50px; z-index: 1000;font-size: 30px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
 
         <!-- 背景地図切り替えのボタン -->
-        <div id="basemap-controls" style="position: absolute; top: 10px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
-            <label><input type="radio" name="basemap" value="地理院タイル淡色地図" checked> 地理院タイル淡色地図</label><br>
-            <label><input type="radio" name="basemap" value="ベースマップ航空写真"> ベースマップ航空写真</label><br>
+        <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
+            <label><input type="radio" name="basemap" value="地理院タイル淡色地図" checked> 地理院淡色地図</label><br>
+            <label><input type="radio" name="basemap" value="ベースマップ航空写真"> 航空写真</label><br>
             <label><input type="radio" name="basemap" value="1970年代写真"> 1970年代写真</label><br>
             <label><input type="radio" name="basemap" value="長野県CS立体図"> 長野県CS立体図</label><br>
-            <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図V2</label>
+            <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図</label>
         </div>
         
         <!-- ラジオボタン追加：スタイル切り替え用●●14●● -->
-        <div style="position: absolute; top: 10px; right: 220px;  transform: translateX(-50%); background: white; font-size: 24px;padding: 10px; border-radius: 5px; z-index: 1000;">
+        <div style="position: absolute; top: 5px; right: 170px;  transform: translateX(-50%); background: white; font-size: 28px;padding: 10px; border-radius: 5px; z-index: 1000;">
             <label><input type="radio" name="style" value="RIN" checked> 林班</label><br>
             <label><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label><br>
             <label><input type="radio" name="style" value="L_施業種"> 施業種</label><br>
@@ -83,7 +83,7 @@
                 // 地図オブジェクトを作成し、中心地点とズームレベルを設定。
                 // ★★★めも：初期表示は南箕輪村辺（ズームレベル16/35.8836/137.9419）。市町村によって変更する★★★                
                 // 基本的なOSM Leaflet地図
-                let map = L.map('map').setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+                let map = L.map('map').setView([35.8836, 137.9419], 16);//めも：大芝中心に変更
 
 
                 // 2. 地図の背景を表示
@@ -244,7 +244,7 @@
                     //★★★GitHubPagesで公開している森林簿FGBを取得するよう指定★★★。
                     // flatgeobufのJavaScript APIを使用して、geojsonとしてフィーチャーを反復処理
                     // バウンディングボックスを指定するため、flatgeobufは関連するデータのサブセットのみを取得し、全ファイルを取得しません。
-                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202409_minowa_full.fgb', fgBoundingBox());
+                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minamiminowa/sinrinbo_minamiminowa_202409_full.fgb', fgBoundingBox());
 
                     //5.スタイルの設定（★★★パターン増やす）
 
@@ -302,6 +302,15 @@
                     });
                 });
 
+                
+                // スケール（縮尺）コントロールを追加
+                L.control.scale({
+                    position: 'bottomleft', // スケールを左下に表示
+                    metric: true,           // メートル法（キロメートル）を使用
+                    imperial: false         // マイルなどの単位を非表示
+                }).addTo(map);
+
+                
                 // ここからGPS追跡機能の実装。50行くらい。
                 let gpsEnabled = false; // GPS追跡の状態を管理
                 let gpsMarker = null; // 現在地を表示するマーカー
