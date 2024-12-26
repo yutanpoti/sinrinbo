@@ -22,7 +22,7 @@
             }
             
             #basemap-controls {
-            font-size: 20px; /* ラベルのフォントサイズを大きく */
+            font-size: 24px; /* ラベルのフォントサイズを大きく */
             line-height: 1.8; /* 各行の間隔を広げる */
             }
 
@@ -55,7 +55,7 @@
     <body>
         <div id="map"></div><!-- めも：DIVはブロックの目印。id="map"は「ここに地図を表示してください」という目印 -->
         <!-- めも：現在地表示のためのボタン -->
-        <button id="gpsButton" style="position: absolute; top: 20px; left: 50px; z-index: 1000;font-size: 33px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
+        <button id="gpsButton" style="position: absolute; top: 20px; left: 50px; z-index: 1000;font-size: 30px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
 
         <!-- 背景地図切り替えのボタン -->
         <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
@@ -67,7 +67,7 @@
         </div>
         
         <!-- ラジオボタン追加：スタイル切り替え用●●14●● -->
-        <div style="position: absolute; top: 5px; right: 160px;  transform: translateX(-50%); background: white; font-size: 26px;padding: 10px; border-radius: 5px; z-index: 1000;">
+        <div style="position: absolute; top: 5px; right: 170px;  transform: translateX(-50%); background: white; font-size: 28px;padding: 10px; border-radius: 5px; z-index: 1000;">
             <label><input type="radio" name="style" value="RIN" checked> 林班</label><br>
             <label><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label><br>
             <label><input type="radio" name="style" value="L_施業種"> 施業種</label><br>
