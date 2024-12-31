@@ -1,10 +1,10 @@
 <html lang="ja"> <!--めも：？？？は修正検討。★★★は運用時のデータ入れ替えや設定でいじるところ　　-->
     <head><!--めも：headはページ閲覧で見えないもの。⇔bodyは見える。-->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/> <!-- めも：文字コード指定。日本語表示できるように。？？？フルスクリーン固定にしたい。勉強用index参照 -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/> <!-- めも：文字コード指定。日本語表示できるように。 -->
         <title>ちいもりず_大町市北部2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" /><!--めも：スタイルシートとして、href～のデータを読み込む-->
         <link rel="stylesheet" href="index.css" />
-        <link rel="stylesheet" href="table.css" /><!--めも：カラム地図表示用のスタイルシート。要らないかも？-->
+        <link rel="stylesheet" href="table.css" /><!--めも：カラム地図表示用のスタイルシート。要らないかも？？？-->
         <script src="https://unpkg.com/underscore@1.13.1/underscore-min.js"></script><!--めも：外部のスクリプトを呼び出して実行。asyncを入れると、並行して実行される。-->
         <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> <!-- LeafletのJavaScriptファイルを読み込み -->
         <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script><!-- FlatGeobuf形式のデータを扱うためのライブラリを読み込み。 -->
@@ -33,7 +33,7 @@
             }
 
             .leaflet-popup-content {
-                font-size: 18px; /* フォントサイズを大きく */
+                font-size: 18px; /* ポップアップ表示のフォントサイズ */
                 line-height: 1.6; /* 行間を広げる */
                 padding: 5px; /* 内側の余白を追加 */
             }
@@ -55,7 +55,7 @@
     <body>
         <div id="map"></div><!-- めも：DIVはブロックの目印。id="map"は「ここに地図を表示してください」という目印 -->
         <!-- めも：現在地表示のためのボタン -->
-        <button id="gpsButton" style="position: absolute; top: 20px; left: 50px; z-index: 1000;font-size: 30px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
+        <button id="gpsButton" style="position: absolute; bottom: 30px; left: 10px; z-index: 1000;font-size: 30px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
 
         <!-- 背景地図切り替えのボタン -->
         <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
@@ -66,14 +66,22 @@
             <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図</label>
         </div>
         
-        <!-- ラジオボタン追加：スタイル切り替え用●●14●● -->
-        <div style="position: absolute; top: 5px; right: 170px;  transform: translateX(-50%); background: white; font-size: 28px;padding: 10px; border-radius: 5px; z-index: 1000;">
-            <label><input type="radio" name="style" value="RIN" checked> 林班</label><br>
-            <label><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label><br>
-            <label><input type="radio" name="style" value="L_施業種"> 施業種</label><br>
-            <label><input type="radio" name="style" value="L_樹種_1"> 樹種</label><br>
-            <label><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
+        <!-- ラジオボタン追加：スタイル切り替え用 -->
+        <div style="position: absolute; top: 5px; right: 30px; transform: translateX(-50%); background: white; font-size: 24px; padding: 10px; border-radius: 5px; z-index: 1000; border: 2px solid blue;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; max-width: 500px;">
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班" checked> 林班</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1"> 樹種_1</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
+                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_広葉樹HA材積"> 広葉樹HA材積</label>
+            </div>
         </div>
+        
 
 
         <script>//めも：ここからJAVASCRIPT。地図を設定していく。'map'は、さっき作った地図のスペースを使うという意味。
@@ -181,71 +189,26 @@
                         '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
                         '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
                         '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
                         '#A52A2A'
                     ];
-                    const index = parseInt(d, 10) - 1; // "0001" -> 0, "0041" -> 40 めも：フィールド値の文字列を10進法整数にする関数を定義。
+                    const index = parseInt(d, 10) % 100; // "0001" -> 1, "2341" -> 41 めも：フィールド値の文字列を10進法整数にして、下2桁のみ取り出す関数を定義。
                     return colors[index] || '#000000';
                 });
                 
                 
                 // スタイル定義
                 const styles = {
-                    "RIN": (feature) => ({
-                        color: colorScale(feature.properties["L_林班"]),//RINを消してしまったのでL_林班に変更した
+                    "L_林班": (feature) => ({
+                        color: colorScale(feature.properties["L_林班"]),
                         weight: 1,
                         fillOpacity: 0.4,
                     }),
                     "L_森林経営計画": (feature) => {
                         const value = feature.properties["L_森林経営計画"];
                         return {
-                            color: value == 1 ? 'blue' : 'gray', // 値が1なら青、その他は灰色。　==（緩やかな等価比較）文字列の1でもTRUEになる
+                            color: value == 1 ? 'blue' : 'gray', // 値が1なら青、その他は灰色。==（緩やかな等価比較）文字列の1でもTRUEになる
                             weight: 1,
-                            fillOpacity: value == 1 ? 0.4 : 0.2, // 視覚的な区別のため透明度を変更（任意）
+                            fillOpacity: value == 1 ? 0.4 : 0.2, // 視覚的な区別のため透明度を変更（任意）。==（緩やかな等価比較）文字列の1でもTRUEになる
                         };
                     },
                     "L_施業種": (feature) => {
@@ -272,9 +235,79 @@
                         weight: 1,
                         fillOpacity: 0.0,
                     }),
+                    "L_アカマツHA材積": (feature) => {
+                        const value = feature.properties["L_アカマツHA材積"];
+                        let fillOpacity = 0.0; // デフォルト値
+                        if (value > 0 && value < 100) fillOpacity = 0.2;
+                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
+                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
+                        else if (value >= 300) fillOpacity = 0.8;
+                        return {
+                            color: 'red',
+                            weight: 0.1,
+                            fillOpacity: fillOpacity,
+                        };
+                    },
+                    "L_カラマツHA材積": (feature) => {
+                        const value = feature.properties["L_カラマツHA材積"];
+                        let fillOpacity = 0.0; // デフォルト値
+                        if (value > 0 && value < 100) fillOpacity = 0.2;
+                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
+                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
+                        else if (value >= 300) fillOpacity = 0.8;
+                        return {
+                            color: 'orange',
+                            weight: 0.1,
+                            fillOpacity: fillOpacity,
+                        };
+                    },
+                    "L_ヒノキHA材積": (feature) => {
+                        const value = feature.properties["L_ヒノキHA材積"];
+                        let fillOpacity = 0.0; // デフォルト値
+                        if (value > 0 && value < 100) fillOpacity = 0.2;
+                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
+                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
+                        else if (value >= 300) fillOpacity = 0.8;
+                        return {
+                            color: 'darkgreen',
+                            weight: 0.1,
+                            fillOpacity: fillOpacity,
+                        };
+                    },
+                    "L_スギHA材積": (feature) => {
+                        const value = feature.properties["L_スギHA材積"];
+                        let fillOpacity = 0.0; // デフォルト値
+                        if (value > 0 && value < 100) fillOpacity = 0.2;
+                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
+                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
+                        else if (value >= 300) fillOpacity = 0.8;
+                        return {
+                            color: 'blue',
+                            weight: 0.1,
+                            fillOpacity: fillOpacity,
+                        };
+                    },
+                    "L_広葉樹HA材積": (feature) => {
+                        const value = feature.properties["L_広葉樹HA材積"];
+                        let fillOpacity = 0.0; // デフォルト値
+                        if (value > 0 && value < 100) fillOpacity = 0.2;
+                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
+                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
+                        else if (value >= 300) fillOpacity = 0.8;
+                        return {
+                            color: 'yellow',
+                            weight: 0.1,
+                            fillOpacity: fillOpacity,
+                        };
+                    },
                 };
 
 
+                // ポップアップ表示でNull値のときに「UNDEFINED」と表示されないようにするための関数
+                function getValue(value, defaultValue = "-") {
+                    return value ?? defaultValue;
+                }
+                
                 // ここから核心部分。FGB表示をnextResultへ逐次（asyncで）アップデートするコード
                 async function updateResults() {
                     
@@ -317,14 +350,26 @@
                             }
                        
                         //クリックしたときに表示するpopup属性を指定。属性ポップアップ表示用コード作成Excelで文字列つくればOK
-                        }).bindPopup(`KEY_02：${feature.properties["KEY_02"]}<br />
-                                     面積：${feature.properties["L_面積_1"]}ha、　森林経営計画：${feature.properties["L_森林経営計画"]}<br />
-                                     保安林：${feature.properties["L_保安林1"]}・${feature.properties["L_施業方法_保安林1"]}、${feature.properties["L_保安林2"]}・${feature.properties["L_施業方法_保安林2"]}、${feature.properties["L_保安林3"]}・${feature.properties["L_施業方法_保安林3"]}<br />
-                                     施業種：${feature.properties["L_施業種"]}（皆・10・長・複・択）<br />
-                                     効率区域：${feature.properties["L_効率的施業区域"]}、植栽更新：${feature.properties["L_植栽更新森林"]}<br />
-                                     樹種_1：${feature.properties["L_樹種_1"]}、${feature.properties["L_林齢_1"]}年、${feature.properties["L_材積_1"]}m3、(${feature.properties["L_HA材積_1"]}m3/ha)<br />
-                                     樹種_2：${feature.properties["L_樹種_2"]}、${feature.properties["L_林齢_2"]}年、${feature.properties["L_材積_2"]}m3、(${feature.properties["L_HA材積_2"]}m3/ha)<br />
-                                     樹種_3：${feature.properties["L_樹種_3"]}、${feature.properties["L_林齢_3"]}年、${feature.properties["L_材積_3"]}m3、(${feature.properties["L_HA材積_3"]}m3/ha)<br />  `)
+                        }).bindPopup(`KEY_02：${getValue(feature.properties["KEY_02"])}<br />
+                                    林班-小-施-枝：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}<br />
+                                    面積：${getValue(feature.properties["L_面積_1"])}ha、　森林経営計画：${getValue(feature.properties["L_森林経営計画"])}<br />
+                                    保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
+                                            ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
+                                            ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
+                                    施業種：${getValue(feature.properties["L_施業種"])}（皆・10・長・複・択）<br />
+                                    効率区域：${getValue(feature.properties["L_効率的施業区域"])}、植栽更新：${getValue(feature.properties["L_植栽更新森林"])}<br />
+                                    樹種_1：${getValue(feature.properties["L_樹種_1"])}、
+                                            ${getValue(feature.properties["L_林齢_1"])}年、
+                                            ${getValue(feature.properties["L_材積_1"])}m3、
+                                            (${getValue(feature.properties["L_HA材積_1"])}m3/ha)<br />
+                                    樹種_2：${getValue(feature.properties["L_樹種_2"])}、
+                                            ${getValue(feature.properties["L_林齢_2"])}年、
+                                            ${getValue(feature.properties["L_材積_2"])}m3、
+                                            (${getValue(feature.properties["L_HA材積_2"])}m3/ha)<br />
+                                    樹種_3：${getValue(feature.properties["L_樹種_3"])}、
+                                            ${getValue(feature.properties["L_林齢_3"])}年、
+                                            ${getValue(feature.properties["L_材積_3"])}m3、
+                                            (${getValue(feature.properties["L_HA材積_3"])}m3/ha)<br />`)
                        .addTo(nextResults);
                     }
                     rectangle.bringToFront();
