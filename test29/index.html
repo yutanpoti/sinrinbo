@@ -48,7 +48,7 @@
           position: absolute;
           top: 25px;/* 1.25倍の影響でズレたので調整 */
           left: 15px;
-          font-size: 18px;
+          font-size: 20px;
           transform: scale(1.25);  /* 元のサイズの1.25倍に拡大 */
           background: white;
           padding: 10px;
@@ -56,7 +56,7 @@
           border: 1px solid #ccc;
           border-radius: 5px;
           /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
-          line-height: 1.6;
+          line-height: 1.8;
       }
 
       .style-controls {
@@ -87,21 +87,21 @@
           margin-right: 5px;       /* 隣との間隔を少し確保 */
       }
 
-      /* スマートフォン用（画面幅768px以下の場合）：行間 */
+      /* スマートフォン用（画面幅768px以下の場合）：行間
       @media (max-width: 768px) {
           .layer-controls,
           .style-controls {
               line-height: 1.6;
           }
-      }
+      } */
 
-      /* PC用（画面幅769px以上の場合）：行間 */
+      /* PC用（画面幅769px以上の場合）：行間
       @media (min-width: 769px) {
           .layer-controls,
           .style-controls {
               line-height: 1.6;
           }
-      }
+      } */
     </style>
   </head>
   <body>
