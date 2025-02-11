@@ -46,16 +46,17 @@
       /* もともとのスタイルをクラス化 */
       .layer-controls {
           position: absolute;
-          top: 5px;
-          left: 10px;
-          font-size: 24px;
+          top: 40px;/* 1.5倍の影響でズレたので調整 */
+          left: 40px;
+          font-size: 18px;
+          transform: scale(1.5);  /* 元のサイズの1.5倍に拡大 */
           background: white;
           padding: 10px;
           z-index: 1000;
           border: 1px solid #ccc;
           border-radius: 5px;
           /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
-          line-height: 1.8;
+          line-height: 3.0;
       }
 
       .style-controls {
@@ -69,7 +70,8 @@
           border-radius: 5px;
           z-index: 1000;
           border: 2px solid blue;
-          line-height: 1.8;
+          /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
+          line-height: 3.0;
       }
 
       .style-radio-group {
@@ -79,11 +81,17 @@
           max-width: 500px;
       }
 
+      /* ラジオボタンそのものを大きく表示する */
+      .style-controls input[type="radio"] {
+          transform: scale(1.5);  /* 元のサイズの1.5倍に拡大 */
+          margin-right: 5px;       /* 隣との間隔を少し確保 */
+      }
+
       /* スマートフォン用（画面幅768px以下の場合）：行間 */
       @media (max-width: 768px) {
           .layer-controls,
           .style-controls {
-              line-height: 2.7;
+              line-height: 1.5;
           }
       }
 
@@ -91,7 +99,7 @@
       @media (min-width: 769px) {
           .layer-controls,
           .style-controls {
-              line-height: 1.2;
+              line-height: 1.5;
           }
       }
     </style>
