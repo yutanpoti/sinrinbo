@@ -46,23 +46,23 @@
       /* もともとのスタイルをクラス化 */
       .layer-controls {
           position: absolute;
-          top: 40px;/* 1.5倍の影響でズレたので調整 */
-          left: 40px;
+          top: 25px;/* 1.25倍の影響でズレたので調整 */
+          left: 15px;
           font-size: 18px;
-          transform: scale(1.5);  /* 元のサイズの1.5倍に拡大 */
+          transform: scale(1.25);  /* 元のサイズの1.25倍に拡大 */
           background: white;
           padding: 10px;
           z-index: 1000;
           border: 1px solid #ccc;
           border-radius: 5px;
           /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
-          line-height: 3.0;
+          line-height: 1.6;
       }
 
       .style-controls {
           position: absolute;
           top: 5px;
-          right: 30px;
+          right: 15px;
           transform: translateX(-50%);
           background: white;
           font-size: 24px;
@@ -71,7 +71,7 @@
           z-index: 1000;
           border: 2px solid blue;
           /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
-          line-height: 3.0;
+          line-height: 1.6;
       }
 
       .style-radio-group {
@@ -91,7 +91,7 @@
       @media (max-width: 768px) {
           .layer-controls,
           .style-controls {
-              line-height: 1.5;
+              line-height: 1.6;
           }
       }
 
@@ -99,7 +99,7 @@
       @media (min-width: 769px) {
           .layer-controls,
           .style-controls {
-              line-height: 1.5;
+              line-height: 1.6;
           }
       }
     </style>
