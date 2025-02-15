@@ -1,462 +1,647 @@
-<html lang="ja"> <!--めも：？？？は修正検討。★★★は運用時のデータ入れ替えや設定でいじるところ　　-->
-    <head><!--めも：headはページ閲覧で見えないもの。⇔bodyは見える。-->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/> <!-- めも：文字コード指定。日本語表示できるように。 -->
-        <title>ちいもりず_箕輪町2024.9森林簿</title><!-- めも：ブラウザのタブに表示されるタイトル。-->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" /><!--めも：スタイルシートとして、href～のデータを読み込む-->
-        <link rel="stylesheet" href="index.css" />
-        <link rel="stylesheet" href="table.css" /><!--めも：カラム地図表示用のスタイルシート。要らないかも？？？-->
-        <script src="https://unpkg.com/underscore@1.13.1/underscore-min.js"></script><!--めも：外部のスクリプトを呼び出して実行。asyncを入れると、並行して実行される。-->
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> <!-- LeafletのJavaScriptファイルを読み込み -->
-        <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script><!-- FlatGeobuf形式のデータを扱うためのライブラリを読み込み。 -->
-        <script src="https://unpkg.com/json-formatter-js"></script>
-     <!--フルスクリーン表示に変更済-->
-        <style>
-            html, body {
-                margin: 0;
-                padding: 0;
-                height: 100%;
+<html lang="ja">
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>箕輪ちいもりず_2024.9森林簿</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="table.css" />
+    <script src="https://unpkg.com/underscore@1.13.1/underscore-min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
+    <script src="https://unpkg.com/json-formatter-js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+      #basemap-controls {
+        font-size: 24px;
+        line-height: 2.2;
+      }
+      #basemap-controls input[type="radio"] {
+        width: 20px;
+        height: 22px;
+        margin-right: 5px;
+      }
+      .leaflet-popup-content {
+        font-size: 18px;
+        line-height: 1.6;
+        padding: 5px;
+      }
+      .leaflet-popup-content-wrapper {
+        max-width: 800px;
+        padding: 5px;
+      }
+      .leaflet-popup-tip {
+        width: 20px;
+        height: 20px;
+      }
+
+      /* もともとのスタイルをクラス化 */
+      .layer-controls {
+          position: absolute;
+          top: 25px;/* 1.25倍の影響でズレたので調整 */
+          left: 15px;
+          font-size: 20px;
+          transform: scale(1.25);  /* 元のサイズの1.25倍に拡大 */
+          background: white;
+          padding: 10px;
+          z-index: 1000;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
+          line-height: 2.2;
+      }
+
+      .style-controls {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          transform: translateX(-50%);
+          background: white;
+          font-size: 24px;
+          padding: 10px;
+          border-radius: 5px;
+          z-index: 1000;
+          border: 3px solid blue;
+          /* デフォルトの行間（スマホ/PCどちらでも上書きされる） */
+          line-height: 1.8;
+      }
+
+      .style-radio-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          max-width: 500px;
+      }
+
+      /* ラジオボタンそのものを大きく表示する */
+      .style-controls input[type="radio"] {
+          transform: scale(1.5);  /* 元のサイズの1.5倍に拡大 */
+          margin-right: 5px;       /* 隣との間隔を少し確保 */
+      }
+
+      /* スマートフォン用（画面幅768px以下の場合）：行間
+      @media (max-width: 768px) {
+          .layer-controls,
+          .style-controls {
+              line-height: 1.6;
+          }
+      } */
+
+      /* PC用（画面幅769px以上の場合）：行間
+      @media (min-width: 769px) {
+          .layer-controls,
+          .style-controls {
+              line-height: 1.6;
+          }
+      } */
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- レイヤコントロール -->
+    <div class="layer-controls">
+      <label class="forest-label"><input type="checkbox" id="forestLayerToggle" checked> 森林簿</label><br>
+      <label><input type="checkbox" id="cadastralLayerToggle"> 地籍図</label><br>
+      <label><input type="checkbox" id="hazardLayerToggle"> ハザード</label><br>
+      <label><input type="checkbox" id="viewpointLayerToggle"> 見どころ</label><br>
+      <label><input type="checkbox" id="roadLayerToggle"> 路網</label>
+    </div>
+
+    <!-- 現在地追跡ボタン -->
+    <button id="gpsButton" style="position: absolute; bottom: 30px; left: 10px; z-index: 1000; font-size: 30px; padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px; background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
+
+    <!-- 背景地図切り替えのボタン -->
+    <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
+      <label><input type="radio" name="basemap" value="地理院タイル淡色地図" checked> 地理院淡色地図</label><br>
+      <label><input type="radio" name="basemap" value="ベースマップ航空写真"> 航空写真</label><br>
+      <label><input type="radio" name="basemap" value="1970年代写真"> 1970年代写真</label><br>
+      <label><input type="radio" name="basemap" value="長野県CS立体図"> 長野県CS立体図</label><br>
+      <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図</label>
+    </div>
+
+    <!-- スタイル選択用ラジオボタン -->
+    <div class="style-controls">
+      <div class="style-radio-group">    
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班" checked> 林班</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種・保安林</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1"> 樹種_1・林齢</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_広葉樹HA材積"> 広葉樹HA材積</label>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        // 1. 地図の初期化とベースマップの設定
+        let map = L.map("map").setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+        const baseMaps = {
+          "地理院タイル淡色地図": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+            attribution:
+              '<a href="https://www.gsi.go.jp/development/ichiran.html#pale">地理院タイル淡色地図</a>&copy; <a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">国土地理院</a>|<a href="https://www.pref.nagano.lg.jp/rinsei/sangyo/ringyo/seibi/shisan.html">長野県森林情報</a>&copy; <a href="https://www.pref.nagano.lg.jp/index.html">長野県</a>',
+            maxZoom: 18,
+            minZoom: 9,
+          }),
+          "ベースマップ航空写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
+              attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 18,
+              minZoom: 9
+          }),
+          "1970年代写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg', {
+              attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真（1970年代）</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 18,
+              minZoom: 9
+          }),
+          "長野県CS立体図": L.tileLayer('https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png', {
+              attribution: '<a href="https://www.geospatial.jp/">長野県CS立体図</a>',
+              maxZoom: 18,
+              minZoom: 9
+          }),
+          "シームレス地質図V2": L.tileLayer('https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png', {
+              attribution: '<a href="https://gbank.gsj.jp/seamless/index.html">産総研 地質図</a>&copy; <a href="https://www.gsj.jp/">産総研</a>',
+              maxZoom: 18,
+              minZoom: 9
+          })
+        };
+
+        // 初期のベースマップを設定
+        baseMaps["地理院タイル淡色地図"].addTo(map);
+
+        // ベースマップの切り替え機能
+        document.getElementById('basemap-controls').addEventListener('change', (e) => {
+            if (e.target.name === 'basemap') {
+                // 選択された背景地図を取得して切り替え
+                Object.values(baseMaps).forEach(layer => map.removeLayer(layer));
+                baseMaps[e.target.value].addTo(map);
             }
-            #map {
-                height: 100%;
-                width: 100%;
-            }
-            
-            #basemap-controls {
-            font-size: 24px; /* ラベルのフォントサイズを大きく */
-            line-height: 1.8; /* 各行の間隔を広げる */
-            }
-
-            #basemap-controls input[type="radio"] {
-                width: 20px; /* ラジオボタンの幅 */
-                height: 20px; /* ラジオボタンの高さ */
-                margin-right: 10px; /* ボタンとラベルの間隔 */
-            }
-
-            .leaflet-popup-content {
-                font-size: 18px; /* ポップアップ表示のフォントサイズ */
-                line-height: 1.6; /* 行間を広げる */
-                padding: 5px; /* 内側の余白を追加 */
-            }
-
-            .leaflet-popup-content-wrapper {
-                max-width: 800px; /* ポップアップの最大幅を広げる */
-                padding: 5px; /* 内側の余白を調整 */
-            }
-
-            .leaflet-popup-tip {
-                width: 20px; /* ポップアップの尖り部分の幅 */
-                height: 20px; /* ポップアップの尖り部分の高さ */
-            }
-
-        </style>
-        
-
-    </head>
-    <body>
-        <div id="map"></div><!-- めも：DIVはブロックの目印。id="map"は「ここに地図を表示してください」という目印 -->
-        <!-- めも：現在地表示のためのボタン -->
-        <button id="gpsButton" style="position: absolute; bottom: 30px; left: 10px; z-index: 1000;font-size: 30px;padding: 10px 15px; border: 2px solid #007bff; border-radius: 5px;background-color: #ffffff; color: #007bff; cursor: pointer;">現在地追跡 ON</button>
-
-        <!-- 背景地図切り替えのボタン -->
-        <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
-            <label><input type="radio" name="basemap" value="地理院タイル淡色地図" checked> 地理院淡色地図</label><br>
-            <label><input type="radio" name="basemap" value="ベースマップ航空写真"> 航空写真</label><br>
-            <label><input type="radio" name="basemap" value="1970年代写真"> 1970年代写真</label><br>
-            <label><input type="radio" name="basemap" value="長野県CS立体図"> 長野県CS立体図</label><br>
-            <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図</label>
-        </div>
-        
-        <!-- ラジオボタン追加：スタイル切り替え用 -->
-        <div style="position: absolute; top: 5px; right: 30px; transform: translateX(-50%); background: white; font-size: 24px; padding: 10px; border-radius: 5px; z-index: 1000; border: 2px solid blue;">
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; max-width: 500px;">
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班" checked> 林班</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1"> 樹種_1</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
-                <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_広葉樹HA材積"> 広葉樹HA材積</label>
-            </div>
-        </div>
-        
+        });
 
 
-        <script>//めも：ここからJAVASCRIPT。地図を設定していく。'map'は、さっき作った地図のスペースを使うという意味。
-            document.addEventListener("DOMContentLoaded", async () => { //めも：最後までつづく大きなハコ。個別のプログラムは、この下から。
+        // 2. バウンディングボックス作成
+        function getBoundForRect() {
+          const bounds = map.getBounds();
+          const width = map.distance(bounds.getNorthWest(), bounds.getNorthEast());
+          const height = map.distance(bounds.getNorthWest(), bounds.getSouthWest());
+          return map.getCenter().toBounds(Math.min(width, height) * 0.8);
+        }
+        function fgBoundingBox() {
+          const bounds = getBoundForRect();
+          return {
+            minX: bounds.getWest(),
+            maxX: bounds.getEast(),
+            minY: bounds.getSouth(),
+            maxY: bounds.getNorth(),
+          };
+        }
+        let rectangle = L.rectangle(getBoundForRect(), { interactive: false, color: "blue", fillOpacity: 0.0, opacity: 1.0 }).addTo(map);
 
-                // 1. 地図を表示する準備
-                // 地図オブジェクトを作成し、中心地点とズームレベルを設定。
-                // ★★★めも：初期表示は南箕輪村辺（ズームレベル16/35.8836/137.9419）。市町村によって変更する★★★                
-                // 基本的なOSM Leaflet地図
-                let map = L.map('map').setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+        // 3. 共通のスタイル定義（forestLayerなど用）
+        const colorScale = (d) => {
+          const colors =  ["#FF0000","#00FFFF","#66FF00","#9900FF","#FFCC00","#0033FF","#00FF66","#FF0099","#CCFF00","#3300FF","#FF6600","#0099FF","#00FF00","#FF00FF","#FFFF00","#0000FF","#00FFCC","#FF0033","#99FF00","#6600FF","#FF3300","#00CCFF","#33FF00","#CC00FF","#FF9900","#0066FF","#00FF33","#FF00CC","#00FF99","#FF0066"];
+          const index = parseInt(d, 10) % 30;
+          return colors[index] || "#000000";
+        };
+        const styles = {
+          "L_林班": (feature) => ({
+            color: colorScale(feature.properties["L_林班"]),
+            weight: 1,
+            fillOpacity: 0.4,
+          }),
+          "L_森林経営計画": (feature) => {
+            const value = feature.properties["L_森林経営計画"];
+            return {
+              color: value == 1 ? "blue" : "gray",
+              weight: 1,
+              fillOpacity: value == 1 ? 0.4 : 0.2,
+            };
+          },
+          "L_施業種": (feature) => {
+            const colors = { 1: "red", 2: "orange", 3: "yellow", 4: "green", 5: "blue" };
+            const baseColor = colors[feature.properties["L_施業種"]] || "gray";
+            // 「L_保安林1」と「L_保安林2」のいずれも値がない場合は細い線（0.5）、それ以外は太い線（5）
+            const weight = (!feature.properties["L_保安林1"] && !feature.properties["L_保安林2"]) ? 0.5 : 5;
+            return {
+              color: baseColor,
+              weight: weight,
+              fillOpacity: 0.4,
+            };
+          },
+          "L_樹種_1": (feature) => {
+            const colors = {
+              アカマツ: "red",
+              カラマツ: "orange",
+              ヒノキ: "darkgreen",
+              サワラ: "lightgreen",
+              スギ: "blue",
+              その他広: "yellow",
+            };
+            return {
+              color: colors[feature.properties["L_樹種_1"]] || "gray",
+              weight: 1,
+              fillOpacity: +feature.properties["L_林齢_1"] < 40 ? 0.2 : (+feature.properties["L_林齢_1"] < 80 ? 0.4 : 0.6),
+            };
+          },
+          "枠のみ": (feature) => ({
+            color: "black",
+            weight: 1, //細い線で、透明度0.0
+            fillOpacity: 0.0,
+          }),
+          "L_アカマツHA材積": (feature) => {
+            const value = feature.properties["L_アカマツHA材積"];
+            let fillOpacity = 0.0;
+            if (value > 0 && value < 100) fillOpacity = 0.2;
+            else if (value >= 100 && value < 200) fillOpacity = 0.4;
+            else if (value >= 200 && value < 300) fillOpacity = 0.6;
+            else if (value >= 300) fillOpacity = 0.8;
+            return {
+              color: "red",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },
+          "L_カラマツHA材積": (feature) => {
+            const value = feature.properties["L_カラマツHA材積"];
+            let fillOpacity = 0.0;
+            if (value > 0 && value < 100) fillOpacity = 0.2;
+            else if (value >= 100 && value < 200) fillOpacity = 0.4;
+            else if (value >= 200 && value < 300) fillOpacity = 0.6;
+            else if (value >= 300) fillOpacity = 0.8;
+            return {
+              color: "orange",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },
+          "L_ヒノキHA材積": (feature) => {
+            const value = feature.properties["L_ヒノキHA材積"];
+            let fillOpacity = 0.0;
+            if (value > 0 && value < 100) fillOpacity = 0.2;
+            else if (value >= 100 && value < 200) fillOpacity = 0.4;
+            else if (value >= 200 && value < 300) fillOpacity = 0.6;
+            else if (value >= 300) fillOpacity = 0.8;
+            return {
+              color: "darkgreen",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },
+          "L_スギHA材積": (feature) => {
+            const value = feature.properties["L_スギHA材積"];
+            let fillOpacity = 0.0;
+            if (value > 0 && value < 100) fillOpacity = 0.2;
+            else if (value >= 100 && value < 200) fillOpacity = 0.4;
+            else if (value >= 200 && value < 300) fillOpacity = 0.6;
+            else if (value >= 300) fillOpacity = 0.8;
+            return {
+              color: "blue",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },
+          "L_広葉樹HA材積": (feature) => {
+            const value = feature.properties["L_広葉樹HA材積"];
+            let fillOpacity = 0.0;
+            if (value > 0 && value < 100) fillOpacity = 0.2;
+            else if (value >= 100 && value < 200) fillOpacity = 0.4;
+            else if (value >= 200 && value < 300) fillOpacity = 0.6;
+            else if (value >= 300) fillOpacity = 0.8;
+            return {
+              color: "yellow",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },
+        };
 
+        // ポップアップ用のnullチェック関数。「UNDEFINED」と表示されないようにするため
+        function getValue(value, defaultValue = "-") {
+          return value ?? defaultValue;
+        }
 
-                // 2. 地図の背景を表示
-                // 背景地図レイヤー定義
-                const baseMaps = {
-                    "地理院タイル淡色地図": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
-                        attribution: '<a href="https://www.gsi.go.jp/development/ichiran.html#pale">地理院タイル淡色地図</a>&copy; <a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">国土地理院</a>|      <a href="https://www.pref.nagano.lg.jp/rinsei/sangyo/ringyo/seibi/shisan.html">長野県森林情報</a>&copy; <a href="https://www.pref.nagano.lg.jp/index.html">長野県</a>',
-                        maxZoom: 18,
-                        minZoom: 9
-                    }),
-                    "ベースマップ航空写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
-                        attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
-                        maxZoom: 18,
-                        minZoom: 9
-                    }),
-                    "1970年代写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg', {
-                        attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真（1970年代）</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
-                        maxZoom: 18,
-                        minZoom: 9
-                    }),
-                    "長野県CS立体図": L.tileLayer('https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png', {
-                        attribution: '<a href="https://www.geospatial.jp/">長野県CS立体図</a>',
-                        maxZoom: 18,
-                        minZoom: 9
-                    }),
-                    "シームレス地質図V2": L.tileLayer('https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png', {
-                        attribution: '<a href="https://gbank.gsj.jp/seamless/index.html">産総研 地質図</a>&copy; <a href="https://www.gsj.jp/">産総研</a>',
-                        maxZoom: 18,
-                        minZoom: 9
-                    })
-                };
-
-                // 初期地図を設定
-                baseMaps["地理院タイル淡色地図"].addTo(map);
-
-                // 背景地図切り替え機能
-                document.getElementById('basemap-controls').addEventListener('change', (e) => {
-                    if (e.target.name === 'basemap') {
-                        // 選択された背景地図を取得して切り替え
-                        Object.values(baseMaps).forEach(layer => map.removeLayer(layer));
-                        baseMaps[e.target.value].addTo(map);
-                    }
-                });
-
-
-    
-
-                // 3. バウンディングボックスづくり
-
-                function getBoundForRect() {
-                    const bounds = map.getBounds();
-    
-                    const width = map.distance(bounds.getNorthWest(), bounds.getNorthEast());
-                    const height = map.distance(bounds.getNorthWest(), bounds.getSouthWest());
-                    return map.getCenter().toBounds(Math.min(width, height) * 0.8);
+        // 4. 各FGBレイヤの定義
+        // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装
+        const layers = {
+          // 4-1. 森林簿（forestLayer）
+          forest: {
+            url: "https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202409_minowa_mini.fgb",
+            // 初期表示はチェックONのため、layerGroupをすぐにマップへ追加
+            layerGroup: L.layerGroup().addTo(map),
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const selectedStyle = document.querySelector('input[name="style"]:checked').value;
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                const style = styles[selectedStyle](feature);
+                L.geoJSON(feature, { style: style })
+                  .on({
+                    mouseover: function (e) {
+                      e.target.setStyle({
+                        weight: 4,
+                        fillOpacity: 0.8,
+                      });
+                    },
+                    mouseout: function (e) {
+                      e.target.setStyle(style);
+                    },
+                  })
+                  .bindPopup(
+                    `KEY_02：${getValue(feature.properties["KEY_02"])}<br />
+                     林班-小-施-枝：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}<br />
+                     面積：${getValue(feature.properties["L_面積_1"])}ha、　森林経営計画：${getValue(feature.properties["L_森林経営計画"])}<br />
+                     保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
+                     ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
+                     ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
+                     施業種：${getValue(feature.properties["L_施業種"])}（皆・10・長・複・択）<br />
+                     効率区域：${getValue(feature.properties["L_効率的施業区域"])}、植栽更新：${getValue(feature.properties["L_植栽更新森林"])}<br />
+                     樹種_1：${getValue(feature.properties["L_樹種_1"])}、
+                     ${getValue(feature.properties["L_林齢_1"])}年、
+                     ${getValue(feature.properties["L_材積_1"])}m3、
+                     (${getValue(feature.properties["L_HA材積_1"])}m3/ha)<br />
+                     樹種_2：${getValue(feature.properties["L_樹種_2"])}、
+                     ${getValue(feature.properties["L_林齢_2"])}年、
+                     ${getValue(feature.properties["L_材積_2"])}m3、
+                     (${getValue(feature.properties["L_HA材積_2"])}m3/ha)<br />
+                     樹種_3：${getValue(feature.properties["L_樹種_3"])}、
+                     ${getValue(feature.properties["L_林齢_3"])}年、
+                     ${getValue(feature.properties["L_材積_3"])}m3、
+                     (${getValue(feature.properties["L_HA材積_3"])}m3/ha)<br />`
+                  )
+                  .addTo(this.layerGroup);
+              }
+              rectangle.bringToFront();
+            },
+          },
+          // 4-2. 地籍図（cadastralLayer）
+          cadastral: {
+            url: "https://habs.rad.naro.go.jp/spatial_data/amxpoly47/amxpoly_2022_20.fgb",
+            layerGroup: L.layerGroup(), // 初期はチェックOFFなので、マップへは後で追加
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                // シンプルな紫色のアウトライン
+                const style = { color: "purple", weight: 3, fillOpacity: 0.1 };
+                // ポップアップ：市区町村名、大字名、丁目名、小字名、地番を表示
+                const popupContent = `市区町村名：${getValue(feature.properties["市区町村名"])}<br />
+                                      大字名：${getValue(feature.properties["大字名"])}<br />
+                                      丁目名：${getValue(feature.properties["丁目名"])}<br />
+                                      小字名：${getValue(feature.properties["小字名"])}<br />
+                                      地番：${getValue(feature.properties["地番"])}`;
+                L.geoJSON(feature, { style: style })
+                  .bindPopup(popupContent)
+                  .addTo(this.layerGroup);
+              }
+            },
+          },
+          // 4-3. ハザード（hazardLayer）
+          hazard: {
+            url: "https://yutanpoti.github.io/sinrinbo/FGB/hazard_merge.fgb",
+            layerGroup: L.layerGroup(),
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                // 属性['layer'] によって色分け
+                const layerValue = feature.properties["layer"];
+                let color;
+                switch (layerValue) {
+                  case "kyuukeisha":
+                    color = "pink";
+                    break;
+                  case "red":
+                    color = "red";
+                    break;
+                  case "yellow":
+                    color = "yellow";
+                    break;
+                  case "santi_houkai":
+                    color = "orange";
+                    break;
+                  case "santi_jisuberi":
+                    color = "purple";
+                    break;
+                  case "santi_ryuushutu_bufffgb":
+                    color = "brown";
+                    break;
+                  default:
+                    color = "black";
                 }
-                // 矩形をflatgeobufが期待する形式に変換
-                function fgBoundingBox() {
-                    const bounds = getBoundForRect();
-                    return {
-                        minX: bounds.getWest(),
-                        maxX: bounds.getEast(),
-                        minY: bounds.getSouth(),
-                        maxY: bounds.getNorth(),
-                    };
-                }
-                // バウンディングボックスに対応するLeafletの矩形を表示
-                let rectangle = L.rectangle(getBoundForRect(), { interactive: false, color: "blue", fillOpacity: 0.0, opacity: 1.0 }).addTo(map);
-    
-
-
-                // 4. 地図の移動とバウンディングボックスを使ったFGBの更新処理、reviousResults nextResults
-                //(内部に5.スタイルの設定　と、6.ポップアップ表示　を含む)
-                // 前回の結果を追跡して、新しい結果を追加する際に削除できるようにする
-                let previousResults = L.layerGroup().addTo(map);
-
-                
-                
-                //林班による色分けの準備。
-                // colorScale関数を定義。変数dを入れると、10進法の文字列にして、colors配列の順番の色を返す。
-                const colorScale = ((d) => {//★★★ここで色を配列（リストみたいなもの）として指定
-                    const colors = [
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#FF0000', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A', '#FFD700', '#FFFF00', '#ADFF2F',
-                        '#7CFC00', '#32CD32', '#00FF00', '#228B22', '#008000', '#006400', '#66CDAA', '#20B2AA',
-                        '#4682B4', '#5F9EA0', '#1E90FF', '#0000FF', '#00008B', '#4B0082', '#8A2BE2', '#9400D3',
-                        '#9932CC', '#8B008B', '#FF00FF', '#EE82EE', '#DDA0DD', '#DA70D6', '#BA55D3', '#FF1493',
-                        '#FF69B4', '#FFB6C1', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222',
-                        '#A52A2A'
-                    ];
-                    const index = parseInt(d, 10) % 100; // "0001" -> 1, "2341" -> 41 めも：フィールド値の文字列を10進法整数にして、下2桁のみ取り出す関数を定義。
-                    return colors[index] || '#000000';
-                });
-                
-                
-                // スタイル定義
-                const styles = {
-                    "L_林班": (feature) => ({
-                        color: colorScale(feature.properties["L_林班"]),
-                        weight: 1,
-                        fillOpacity: 0.4,
-                    }),
-                    "L_森林経営計画": (feature) => {
-                        const value = feature.properties["L_森林経営計画"];
-                        return {
-                            color: value == 1 ? 'blue' : 'gray', // 値が1なら青、その他は灰色。==（緩やかな等価比較）文字列の1でもTRUEになる
-                            weight: 1,
-                            fillOpacity: value == 1 ? 0.4 : 0.2, // 視覚的な区別のため透明度を変更（任意）。==（緩やかな等価比較）文字列の1でもTRUEになる
-                        };
-                    },
-                    "L_施業種": (feature) => {
-                        const colors = { 1: 'red', 2: 'orange', 3: 'yellow', 4: 'green', 5: 'blue' };
-                        return {
-                            color: colors[feature.properties["L_施業種"]] || 'gray',
-                            weight: 1,
-                            fillOpacity: 0.4,
-                        };
-                    },
-                    "L_樹種_1": (feature) => {
-                        const colors = { 
-                            "アカマツ": 'red', "カラマツ": 'orange', "ヒノキ": 'darkgreen',
-                            "サワラ": 'lightgreen', "スギ": 'blue', "その他広": 'yellow' 
-                        };
-                        return {
-                            color: colors[feature.properties["L_樹種_1"]] || 'gray',
-                            weight: 1,
-                            fillOpacity: 0.4,
-                        };
-                    },
-                    "枠のみ": (feature) => ({
-                        color: 'black',
-                        weight: 1,
-                        fillOpacity: 0.0,
-                    }),
-                    "L_アカマツHA材積": (feature) => {
-                        const value = feature.properties["L_アカマツHA材積"];
-                        let fillOpacity = 0.0; // デフォルト値
-                        if (value > 0 && value < 100) fillOpacity = 0.2;
-                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
-                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
-                        else if (value >= 300) fillOpacity = 0.8;
-                        return {
-                            color: 'red',
-                            weight: 0.1,
-                            fillOpacity: fillOpacity,
-                        };
-                    },
-                    "L_カラマツHA材積": (feature) => {
-                        const value = feature.properties["L_カラマツHA材積"];
-                        let fillOpacity = 0.0; // デフォルト値
-                        if (value > 0 && value < 100) fillOpacity = 0.2;
-                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
-                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
-                        else if (value >= 300) fillOpacity = 0.8;
-                        return {
-                            color: 'orange',
-                            weight: 0.1,
-                            fillOpacity: fillOpacity,
-                        };
-                    },
-                    "L_ヒノキHA材積": (feature) => {
-                        const value = feature.properties["L_ヒノキHA材積"];
-                        let fillOpacity = 0.0; // デフォルト値
-                        if (value > 0 && value < 100) fillOpacity = 0.2;
-                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
-                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
-                        else if (value >= 300) fillOpacity = 0.8;
-                        return {
-                            color: 'darkgreen',
-                            weight: 0.1,
-                            fillOpacity: fillOpacity,
-                        };
-                    },
-                    "L_スギHA材積": (feature) => {
-                        const value = feature.properties["L_スギHA材積"];
-                        let fillOpacity = 0.0; // デフォルト値
-                        if (value > 0 && value < 100) fillOpacity = 0.2;
-                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
-                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
-                        else if (value >= 300) fillOpacity = 0.8;
-                        return {
-                            color: 'blue',
-                            weight: 0.1,
-                            fillOpacity: fillOpacity,
-                        };
-                    },
-                    "L_広葉樹HA材積": (feature) => {
-                        const value = feature.properties["L_広葉樹HA材積"];
-                        let fillOpacity = 0.0; // デフォルト値
-                        if (value > 0 && value < 100) fillOpacity = 0.2;
-                        else if (value >= 100 && value < 200) fillOpacity = 0.4;
-                        else if (value >= 200 && value < 300) fillOpacity = 0.6;
-                        else if (value >= 300) fillOpacity = 0.8;
-                        return {
-                            color: 'yellow',
-                            weight: 0.1,
-                            fillOpacity: fillOpacity,
-                        };
-                    },
-                };
-
-
-                // ポップアップ表示でNull値のときに「UNDEFINED」と表示されないようにするための関数
-                function getValue(value, defaultValue = "-") {
-                    return value ?? defaultValue;
-                }
-                
-                // ここから核心部分。FGB表示をnextResultへ逐次（asyncで）アップデートするコード
-                async function updateResults() {
-                    
-                    // 選択されたスタイルを取得
-                    const selectedStyle = document.querySelector('input[name="style"]:checked').value;
-                                                           
-                    // 古い結果を削除
-                    previousResults.remove();
-                    const nextResults = L.layerGroup().addTo(map);
-                    previousResults = nextResults;
-
-                    //★★★GitHubPagesで公開している森林簿FGBを取得するよう指定★★★。
-                    // flatgeobufのJavaScript APIを使用して、geojsonとしてフィーチャーを反復処理
-                    // バウンディングボックスを指定するため、flatgeobufは関連するデータのサブセットのみを取得し、全ファイルを取得しません。
-                    const iter = flatgeobuf.deserialize('https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202409_minowa_mini.fgb', fgBoundingBox());
-
-                    //5.スタイルの設定（★★★パターン増やす）
-
-
-
-                    for await (const feature of iter) {
-
-                        // スタイルを適用する
-                        const style = styles[selectedStyle](feature);
-                        L.geoJSON(feature, { style ,
-
-
-                        //マウスを乗せたときのスタイル変更の挙動を指定
-                        }).on({
-                            'mouseover': function(e) {　// マウスで指したときに不透明度を0.8に変更
-                                const layer = e.target;
-                                layer.setStyle({
-                                    weight: 4,
-                                    fillOpacity: 0.8,
-                                });
-                            },
-                            'mouseout': function(e) {　// マウスが離れたら戻す
-                                const layer = e.target;
-                                layer.setStyle(style);
-                            }
-                       
-                        //クリックしたときに表示するpopup属性を指定。属性ポップアップ表示用コード作成Excelで文字列つくればOK
-                        }).bindPopup(`KEY_02：${getValue(feature.properties["KEY_02"])}<br />
-                                    林班-小-施-枝：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}<br />
-                                    面積：${getValue(feature.properties["L_面積_1"])}ha、　森林経営計画：${getValue(feature.properties["L_森林経営計画"])}<br />
-                                    保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
-                                            ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
-                                            ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
-                                    施業種：${getValue(feature.properties["L_施業種"])}（皆・10・長・複・択）<br />
-                                    効率区域：${getValue(feature.properties["L_効率的施業区域"])}、植栽更新：${getValue(feature.properties["L_植栽更新森林"])}<br />
-                                    樹種_1：${getValue(feature.properties["L_樹種_1"])}、
-                                            ${getValue(feature.properties["L_林齢_1"])}年、
-                                            ${getValue(feature.properties["L_材積_1"])}m3、
-                                            (${getValue(feature.properties["L_HA材積_1"])}m3/ha)<br />
-                                    樹種_2：${getValue(feature.properties["L_樹種_2"])}、
-                                            ${getValue(feature.properties["L_林齢_2"])}年、
-                                            ${getValue(feature.properties["L_材積_2"])}m3、
-                                            (${getValue(feature.properties["L_HA材積_2"])}m3/ha)<br />
-                                    樹種_3：${getValue(feature.properties["L_樹種_3"])}、
-                                            ${getValue(feature.properties["L_林齢_3"])}年、
-                                            ${getValue(feature.properties["L_材積_3"])}m3、
-                                            (${getValue(feature.properties["L_HA材積_3"])}m3/ha)<br />`)
-                       .addTo(nextResults);
-                    }
-                    rectangle.bringToFront();
-                }
-                // ユーザーが地図を頻繁に移動する場合、更新は1秒に1回まで
-                updateResults = _.throttle(updateResults, 1000);
-    
-                // 初期の地図に基づいて結果を表示
-                updateResults();
-                // ...そして、地図が移動するたびに結果を更新
-                map.on("moveend", function(s){
-                    rectangle.setBounds(getBoundForRect());
-                    updateResults();
-                });
-
-                // ラジオボタンでスタイルを切り替える
-                document.querySelectorAll('input[name="style"]').forEach((radio) => {
-                    radio.addEventListener('change', () => {
-                        updateResults(); // スタイルを更新
+                const style = { color: color, weight: 3, fillOpacity: 0.1 };
+                // ハザードはポップアップなし
+                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
+              }
+            },
+          },
+          // 4-4. 見どころ（viewpointLayer）
+          viewpoint: {
+            url: "https://yutanpoti.github.io/sinrinbo/FGB/viewpoint.fgb",
+            layerGroup: L.layerGroup(),
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                // ポイントデータの場合、黄色緑色の丸いシンボルで表示
+                const geojsonOptions = {
+                  pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                      radius: 12,           // やや大きめの円
+                      fillColor: "#ff69b4", // ピンク色 
+                      color: "#ff69b4", 
+                      weight: 1,
+                      fillOpacity: 1,
                     });
-                });
-
-                
-                // スケール（縮尺）コントロールを追加
-                L.control.scale({
-                    position: 'bottomleft', // スケールを左下に表示
-                    metric: true,           // メートル法（キロメートル）を使用
-                    imperial: false         // マイルなどの単位を非表示
-                }).addTo(map);
-
-                
-                // ここからGPS追跡機能の実装。50行くらい。
-                let gpsEnabled = false; // GPS追跡の状態を管理
-                let gpsMarker = null; // 現在地を表示するマーカー
-                let watchId = null; // GPS追跡のID
-                // GPS追跡のON/OFFを切り替える関数
-                function toggleGPS() {
-                    const gpsButton = document.getElementById('gpsButton');
-                    if (!gpsEnabled) {
-                        gpsEnabled = true;
-                        gpsButton.innerText = '現在地追跡 OFF';
-
-                        // GPS追跡を開始
-                        if (navigator.geolocation) {
-                            watchId = navigator.geolocation.watchPosition(
-                                (position) => {
-                                    const { latitude, longitude } = position.coords;
-
-                                    // マーカーが存在しない場合は新規作成
-                                    if (!gpsMarker) {
-                                        gpsMarker = L.marker([latitude, longitude]).addTo(map);
-                                        map.setView([latitude, longitude], 16); // 現在地にズーム
-                                    } else {
-                                        // マーカーを更新
-                                        gpsMarker.setLatLng([latitude, longitude]);
-                                    }
-                                },
-                                (error) => {
-                                    alert('現在地を取得できませんでした: ' + error.message);
-                                },
-                                { enableHighAccuracy: true }
-                            );
-                        } else {
-                            alert('このデバイスではGPSがサポートされていません。');
-                        }
-                    } else {
-                        // GPS追跡を停止
-                        gpsEnabled = false;
-                        gpsButton.innerText = '現在地追跡 ON';
-
-                        if (watchId !== null) {
-                            navigator.geolocation.clearWatch(watchId);
-                            watchId = null;
-                        }
-                        // マーカーを削除
-                        if (gpsMarker) {
-                            map.removeLayer(gpsMarker);
-                            gpsMarker = null;
-                        }
+                  },
+                  onEachFeature: function (feature, layer) {
+                    // 全属性表示。属性名が「linkURL」の場合、リンクを新規タブで開く
+                    let popupContent = "";
+                    for (const [key, value] of Object.entries(feature.properties)) {
+                      if (key === "linkURL") {
+                        popupContent += `${key}: <a href="${value}" target="_blank">${value}</a><br />`;
+                      } else {
+                        popupContent += `${key}: ${value}<br />`;
+                      }
                     }
+                    layer.bindPopup(popupContent);
+                  },
+                };
+                L.geoJSON(feature, geojsonOptions).addTo(this.layerGroup);
+              }
+            },
+          },
+          // 4-5. 路網（roadLayer）
+          road: {
+            url: "https://yutanpoti.github.io/sinrinbo/FGB/road.fgb",
+            layerGroup: L.layerGroup(),
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                // 灰色のシンプルな線で表示
+                const style = { color: "gray", weight: 1, fillOpacity: 0.0 };
+                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
+              }
+            },
+          },
+        };
+
+        // 5. マップ移動時などに各レイヤのデータを更新（更新頻度は1秒に1回に制限）
+        const updateForestLayerThrottled = _.throttle(() => {
+          layers.forest.update();
+        }, 1000);
+        const updateCadastralLayerThrottled = _.throttle(() => {
+          layers.cadastral.update();
+        }, 1000);
+        const updateHazardLayerThrottled = _.throttle(() => {
+          layers.hazard.update();
+        }, 1000);
+        const updateViewpointLayerThrottled = _.throttle(() => {
+          layers.viewpoint.update();
+        }, 1000);
+        const updateRoadLayerThrottled = _.throttle(() => {
+          layers.road.update();
+        }, 1000);
+
+        // 初回更新：チェックされているレイヤのみ update() を実行
+        if(document.getElementById("forestLayerToggle").checked) { layers.forest.update(); }
+        if(document.getElementById("cadastralLayerToggle").checked) { layers.cadastral.update(); }
+        if(document.getElementById("hazardLayerToggle").checked) { layers.hazard.update(); }
+        if(document.getElementById("viewpointLayerToggle").checked) { layers.viewpoint.update(); }
+        if(document.getElementById("roadLayerToggle").checked) { layers.road.update(); }
+
+        // 地図移動時（moveend）の更新：チェックされているレイヤのみ update() を実行
+        map.on("moveend", function() {
+          rectangle.setBounds(getBoundForRect());
+          if(document.getElementById("forestLayerToggle").checked) { updateForestLayerThrottled(); }
+          if(document.getElementById("cadastralLayerToggle").checked) { updateCadastralLayerThrottled(); }
+          if(document.getElementById("hazardLayerToggle").checked) { updateHazardLayerThrottled(); }
+          if(document.getElementById("viewpointLayerToggle").checked) { updateViewpointLayerThrottled(); }
+          if(document.getElementById("roadLayerToggle").checked) { updateRoadLayerThrottled(); }
+        });
+
+        // 6. ラジオボタン変更時は forestLayer のスタイル更新
+        document.querySelectorAll('input[name="style"]').forEach((radio) => {
+          radio.addEventListener("change", () => {
+            layers.forest.update();
+          });
+        });
+
+        // 7. レイヤコントロール：チェックボックスによる表示／非表示切替
+        document.getElementById("forestLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.forest.layerGroup.addTo(map);
+            layers.forest.update();
+          } else {
+            map.removeLayer(layers.forest.layerGroup);
+          }
+        });
+        document.getElementById("cadastralLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.cadastral.layerGroup.addTo(map);
+            layers.cadastral.update();
+          } else {
+            map.removeLayer(layers.cadastral.layerGroup);
+          }
+        });
+        document.getElementById("hazardLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.hazard.layerGroup.addTo(map);
+            layers.hazard.update();
+          } else {
+            map.removeLayer(layers.hazard.layerGroup);
+          }
+        });
+        document.getElementById("viewpointLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.viewpoint.layerGroup.addTo(map);
+            layers.viewpoint.update();
+          } else {
+            map.removeLayer(layers.viewpoint.layerGroup);
+          }
+        });
+        document.getElementById("roadLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.road.layerGroup.addTo(map);
+            layers.road.update();
+          } else {
+            map.removeLayer(layers.road.layerGroup);
+          }
+        });
+
+        // 8. スケールコントロールの追加
+        L.control.scale({
+          position: "bottomleft",
+          metric: true,
+          imperial: false,
+        }).addTo(map);
+
+        //9.  ここからGPS追跡機能の実装。50行くらい。
+        let gpsEnabled = false; // GPS追跡の状態を管理
+        let gpsMarker = null; // 現在地を表示するマーカー
+        let watchId = null; // GPS追跡のID
+        // GPS追跡のON/OFFを切り替える関数
+        function toggleGPS() {
+            const gpsButton = document.getElementById('gpsButton');
+            if (!gpsEnabled) {
+                gpsEnabled = true;
+                gpsButton.innerText = '現在地追跡 OFF';
+
+                // GPS追跡を開始
+                if (navigator.geolocation) {
+                    watchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+
+                            // マーカーが存在しない場合は新規作成
+                            if (!gpsMarker) {
+                                gpsMarker = L.marker([latitude, longitude]).addTo(map);
+                                map.setView([latitude, longitude], 16); // 現在地にズーム
+                            } else {
+                                // マーカーを更新
+                                gpsMarker.setLatLng([latitude, longitude]);
+                            }
+                        },
+                        (error) => {
+                            alert('現在地を取得できませんでした: ' + error.message);
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                } else {
+                    alert('このデバイスではGPSがサポートされていません。');
                 }
-                // ボタンクリックイベントを追加
-                document.getElementById('gpsButton').addEventListener('click', toggleGPS);//GPS機能ここまで
+            } else {
+                // GPS追跡を停止
+                gpsEnabled = false;
+                gpsButton.innerText = '現在地追跡 ON';
+
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                // マーカーを削除
+                if (gpsMarker) {
+                    map.removeLayer(gpsMarker);
+                    gpsMarker = null;
+                }
+            }
+        }
+        // ボタンクリックイベントを追加
+        document.getElementById('gpsButton').addEventListener('click', toggleGPS);//GPS機能ここまで
 
 
-            });
-        </script>
-
-        </body>
-    </html>
+      });
+    </script>
+  </body>
+</html>
