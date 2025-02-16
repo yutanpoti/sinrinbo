@@ -453,13 +453,21 @@
               this.layerGroup.clearLayers();
               const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
               for await (const feature of iter) {
-                // ポイントデータの場合、黄色緑色の丸いシンボルで表示
+                // ポイントデータの場合、属性「category」に応じた色で表示
                 const geojsonOptions = {
                   pointToLayer: function (feature, latlng) {
+                    // カテゴリに応じた色の設定
+                    const categoryColorMap = {
+                      "遺跡": "purple",
+                      "森林公園": "green",
+                      "巨樹": "brown",
+                      "ナイス": "yellow"
+                    };
+                    const color = categoryColorMap[feature.properties.category] || "white";
                     return L.circleMarker(latlng, {
-                      radius: 12,           // やや大きめの円
-                      fillColor: "#ff69b4", // ピンク色 
-                      color: "#ff69b4", 
+                      radius: 15,           // やや大きめの円
+                      fillColor: color,     // categoryに応じた色
+                      color: color,
                       weight: 1,
                       fillOpacity: 1,
                     });
