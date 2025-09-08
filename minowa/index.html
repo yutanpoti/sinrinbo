@@ -465,7 +465,7 @@
                     };
                     const color = categoryColorMap[feature.properties.category] || "white";
                     return L.circleMarker(latlng, {
-                      radius: 15,           // やや大きめの円
+                      radius: 20,           // やや大きめの円
                       fillColor: color,     // categoryに応じた色
                       color: color,
                       weight: 1,
@@ -653,3 +653,4 @@
     </script>
   </body>
 </html>
+
