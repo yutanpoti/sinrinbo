@@ -102,10 +102,86 @@
               line-height: 1.6;
           }
       } */
+
+      /* 中心の十字マーク（赤いクロス） */
+      .crosshair {
+        position: absolute;
+        top: 50%;      /* 画面の上下中央に配置 */
+        left: 50%;     /* 画面の左右中央に配置 */
+        width: 20px;
+        height: 20px;
+        pointer-events: none; /* この要素をクリックしても地図操作を邪魔しない */
+        transform: translate(-50%, -50%); /* 中心基準に配置 */
+        z-index: 9999; /* ✅ 地図よりも前面に表示（最重要ポイント） */
+      }
+
+      /* 十字マークを構成する線のスタイル */
+      .crosshair::before, .crosshair::after {
+        content: '';
+        position: absolute;
+        background: red; /* 線の色（赤） */
+      }
+
+      /* 十字の縦線 */
+      .crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 9px;
+        top: 0;
+      }
+
+      /* 十字の横線 */
+      .crosshair::after {
+        width: 20px;
+        height: 2px;
+        top: 9px;
+        left: 0;
+      }
+
+      /* 座標コピー用ボタン */
+      #copyBtn {
+        position: absolute;
+        bottom: 130px;
+        left: 10px;
+        z-index: 1000; /* 地図の上に表示するため */
+        font-size: 24px;
+        color: red;
+        padding: 8px 12px;
+        background: white;
+        border: 2px solid red;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      /* 中心座標の表示ウインドウ */
+      #coordDisplay {
+        position: absolute;
+        bottom: 100px;
+        left: 10px;
+        background: rgba(255,255,255,0.9);
+        border: 2px solid red;
+        border-radius: 5px;
+        padding: 6px 10px;
+        font-family: monospace;
+        z-index: 1000;
+      }
+
+
     </style>
   </head>
   <body>
     <div id="map"></div>
+
+    <!-- 中心の十字マーク（常に最前面で表示） -->
+    <div class="crosshair"></div>
+
+    <!-- 現在の地図中心座標をコピーするボタン -->
+    <button id="copyBtn">中心座標をコピー</button>
+
+    <!-- 地図の中心座標を常時表示するウインドウ -->
+    <div id="coordDisplay">
+      中心座標：<span id="lat">0</span>, <span id="lng">0</span>
+    </div>
 
     <!-- レイヤコントロール -->
     <div class="layer-controls">
@@ -131,13 +207,13 @@
     <!-- スタイル選択用ラジオボタン -->
     <div class="style-controls">
       <div class="style-radio-group">    
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班" checked> 林班</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班"> 林班</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種・保安林</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1"> 樹種_1・林齢</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1" checked> 樹種_1・林齢</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_広葉樹HA材積"> 広葉樹HA材積</label>
@@ -147,33 +223,36 @@
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         // 1. 地図の初期化とベースマップの設定
-        let map = L.map("map").setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+        let map = L.map("map", {
+            minZoom: 10    // ズーム下限
+        }).setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+        
         const baseMaps = {
           "地理院タイル淡色地図": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
             attribution:
               '<a href="https://www.gsi.go.jp/development/ichiran.html#pale">地理院タイル淡色地図</a>&copy; <a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">国土地理院</a>|<a href="https://www.pref.nagano.lg.jp/rinsei/sangyo/ringyo/seibi/shisan.html">長野県森林情報</a>&copy; <a href="https://www.pref.nagano.lg.jp/index.html">長野県</a>',
-            maxZoom: 18,
-            minZoom: 9,
+              maxNativeZoom: 18,  // タイルが存在する最大ズーム
+              minNativeZoom: 5,   // タイルが存在する最小ズーム
           }),
           "ベースマップ航空写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
-              maxZoom: 18,
-              minZoom: 9
+              maxNativeZoom: 18,  // タイルが存在する最大ズーム
+              minNativeZoom: 14,   // タイルが存在する最小ズーム
           }),
           "1970年代写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg', {
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真（1970年代）</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
-              maxZoom: 18,
-              minZoom: 9
+              maxNativeZoom: 17,  // タイルが存在する最大ズーム
+              minNativeZoom: 10,   // タイルが存在する最小ズーム
           }),
           "長野県CS立体図": L.tileLayer('https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png', {
               attribution: '<a href="https://www.geospatial.jp/">長野県CS立体図</a>',
-              maxZoom: 18,
-              minZoom: 9
+              maxNativeZoom: 18,  // タイルが存在する最大ズーム
+              minNativeZoom: 8,   // タイルが存在する最小ズーム
           }),
           "シームレス地質図V2": L.tileLayer('https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png', {
               attribution: '<a href="https://gbank.gsj.jp/seamless/index.html">産総研 地質図</a>&copy; <a href="https://www.gsj.jp/">産総研</a>',
-              maxZoom: 18,
-              minZoom: 9
+              maxNativeZoom: 13,  // タイルが存在する最大ズーム
+              minNativeZoom: 0,   // タイルが存在する最小ズーム
           })
         };
 
@@ -465,7 +544,7 @@
                     };
                     const color = categoryColorMap[feature.properties.category] || "white";
                     return L.circleMarker(latlng, {
-                      radius: 20,           // やや大きめの円
+                      radius: 24,           // やや大きめの円
                       fillColor: color,     // categoryに応じた色
                       color: color,
                       weight: 1,
@@ -649,8 +728,46 @@
         document.getElementById('gpsButton').addEventListener('click', toggleGPS);//GPS機能ここまで
 
 
+        // -------------------------------
+        // 中心座標をコピーする処理
+        // -------------------------------
+        document.getElementById('copyBtn').addEventListener('click', function() {
+          const center = map.getCenter(); // 地図の現在中心座標を取得
+          const lat = center.lat.toFixed(6); // 緯度（小数点6桁まで）
+          const lng = center.lng.toFixed(6); // 経度（小数点6桁まで）
+          const text = `${lat}, ${lng}`;     // Googleマップ形式で整形
+
+          // クリップボードへコピー
+          navigator.clipboard.writeText(text).then(() => {
+            alert(`中心座標をコピーしました：\n${text}`);
+          }).catch(err => {
+            alert('コピーに失敗しました: ' + err);
+          });
+        });
+
+        // -------------------------------
+        // 地図中心座標の表示を更新する処理
+        // -------------------------------
+        function updateCenterCoords() {
+          const c = map.getCenter();
+          document.getElementById('lat').textContent = c.lat.toFixed(6);
+          document.getElementById('lng').textContent = c.lng.toFixed(6);
+        }
+
+        // 地図が移動するたびに中心座標を更新
+        map.on('move', updateCenterCoords);
+
+        // 初期表示時にも座標を表示
+        updateCenterCoords();
+
+        // -------------------------------
+        // 十字マークはCSSで常時表示され、
+        // z-indexを9999に設定したため常に最前面に出ます。
+        // -------------------------------
+
+
+
       });
     </script>
   </body>
 </html>
-
