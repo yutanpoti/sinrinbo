@@ -200,23 +200,33 @@
       指定座標へ移動
     </button>
 
-    <!-- 座標入力用ダイアログ -->
-    <dialog id="coordDialog" style="
-      border: 1px solid #888;
-      border-radius: 8px;
-      padding: 20px;
-      width: 250px;
+    <!-- カスタムモーダル -->
+    <div id="coordModal" style="
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
     ">
-      <form method="dialog">
+      <div style="
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        width: 250px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      ">
         <p><b>座標を入力してください</b></p>
         <p style="font-size: 12px;">（例：35.681236, 139.767125）</p>
         <input id="coordInput" type="text" placeholder="緯度, 経度" style="width:100%; padding:5px;"><br><br>
         <div style="text-align:right;">
-          <button value="cancel">取消</button>
-          <button id="moveBtn" value="confirm">移動</button>
+          <button id="cancelBtn">取消</button>
+          <button id="moveBtn">移動</button>
         </div>
-      </form>
-    </dialog>
+      </div>
+    </div>
 
     <!-- レイヤコントロール -->
     <div class="layer-controls">
@@ -802,29 +812,29 @@
 
 
         // -------------------------------
-        // 「指定座標へ移動」ボタンとダイアログの処理
+        // 「指定座標へ移動」ボタンとカスタムモーダルの処理
         // -------------------------------
 
-        // ダイアログとボタンを取得
-        const dialog = document.getElementById('coordDialog');
+        const modal = document.getElementById('coordModal');
         const gotoBtn = document.getElementById('gotoBtn');
         const moveBtn = document.getElementById('moveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
         const coordInput = document.getElementById('coordInput');
 
-        // ボタンをクリックしたらダイアログを表示
+        // モーダルを開く
         gotoBtn.addEventListener('click', () => {
-          coordInput.value = '';   // 前回の入力をクリア
-          dialog.showModal();      // ダイアログを表示
+          coordInput.value = '';
+          modal.style.display = 'flex';
+        });
+
+        // モーダルを閉じる
+        cancelBtn.addEventListener('click', () => {
+          modal.style.display = 'none';
         });
 
         // 「移動」ボタンが押されたとき
-        moveBtn.addEventListener('click', (e) => {
-          e.preventDefault(); // formの自動送信を止める
-
-          // 入力値を取得（例：「35.681236, 139.767125」）
+        moveBtn.addEventListener('click', () => {
           const input = coordInput.value.trim();
-
-          // 入力チェック（カンマで分割）
           const parts = input.split(',');
           if (parts.length !== 2) {
             alert('正しい形式で入力してください（例：35.681236, 139.767125）');
@@ -833,18 +843,13 @@
 
           const lat = parseFloat(parts[0]);
           const lng = parseFloat(parts[1]);
-
-          // 数値が正しいか確認
           if (isNaN(lat) || isNaN(lng)) {
             alert('緯度・経度の数値が正しくありません。');
             return;
           }
 
-          // 地図の中心を指定座標へ移動
           map.setView([lat, lng], map.getZoom());
-
-          // ダイアログを閉じる
-          dialog.close();
+          modal.style.display = 'none';
         });
 
 
@@ -852,5 +857,4 @@
     </script>
   </body>
 </html>
-
 
