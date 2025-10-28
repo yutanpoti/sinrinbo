@@ -1,3 +1,4 @@
+
 <html lang="ja">
   <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
@@ -182,6 +183,40 @@
     <div id="coordDisplay">
       中心座標：<span id="lat">0</span>, <span id="lng">0</span>
     </div>
+
+    <!-- 指定座標へ移動ボタン -->
+    <button id="gotoBtn" style="
+      position: absolute;
+      bottom: 190px;
+      left: 10px;
+      z-index: 1000;
+      font-size: 24px;
+      padding: 8px 12px;
+      background: white;
+      border: 2px solid #888;
+      border-radius: 5px;
+      cursor: pointer;
+    ">
+      指定座標へ移動
+    </button>
+
+    <!-- 座標入力用ダイアログ -->
+    <dialog id="coordDialog" style="
+      border: 1px solid #888;
+      border-radius: 8px;
+      padding: 20px;
+      width: 250px;
+    ">
+      <form method="dialog">
+        <p><b>座標を入力してください</b></p>
+        <p style="font-size: 12px;">（例：35.681236, 139.767125）</p>
+        <input id="coordInput" type="text" placeholder="緯度, 経度" style="width:100%; padding:5px;"><br><br>
+        <div style="text-align:right;">
+          <button value="cancel">取消</button>
+          <button id="moveBtn" value="confirm">移動</button>
+        </div>
+      </form>
+    </dialog>
 
     <!-- レイヤコントロール -->
     <div class="layer-controls">
@@ -765,6 +800,52 @@
         // z-indexを9999に設定したため常に最前面に出ます。
         // -------------------------------
 
+
+        // -------------------------------
+        // 「指定座標へ移動」ボタンとダイアログの処理
+        // -------------------------------
+
+        // ダイアログとボタンを取得
+        const dialog = document.getElementById('coordDialog');
+        const gotoBtn = document.getElementById('gotoBtn');
+        const moveBtn = document.getElementById('moveBtn');
+        const coordInput = document.getElementById('coordInput');
+
+        // ボタンをクリックしたらダイアログを表示
+        gotoBtn.addEventListener('click', () => {
+          coordInput.value = '';   // 前回の入力をクリア
+          dialog.showModal();      // ダイアログを表示
+        });
+
+        // 「移動」ボタンが押されたとき
+        moveBtn.addEventListener('click', (e) => {
+          e.preventDefault(); // formの自動送信を止める
+
+          // 入力値を取得（例：「35.681236, 139.767125」）
+          const input = coordInput.value.trim();
+
+          // 入力チェック（カンマで分割）
+          const parts = input.split(',');
+          if (parts.length !== 2) {
+            alert('正しい形式で入力してください（例：35.681236, 139.767125）');
+            return;
+          }
+
+          const lat = parseFloat(parts[0]);
+          const lng = parseFloat(parts[1]);
+
+          // 数値が正しいか確認
+          if (isNaN(lat) || isNaN(lng)) {
+            alert('緯度・経度の数値が正しくありません。');
+            return;
+          }
+
+          // 地図の中心を指定座標へ移動
+          map.setView([lat, lng], map.getZoom());
+
+          // ダイアログを閉じる
+          dialog.close();
+        });
 
 
       });
