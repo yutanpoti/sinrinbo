@@ -255,15 +255,15 @@
     <div class="style-controls">
       <div class="style-radio-group">    
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_林班"> 林班</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1" checked> 樹種_1・林齢</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_森林経営計画"> 森林経営計画</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_アカマツHA材積"> アカマツHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_一体整備相当区域"> 一体整備相当区域</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種・保安林</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_樹種_1" checked> 樹種_1・林齢</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業履歴1_除間伐"> 徐間伐履歴</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="枠のみ"> 枠のみ</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_広葉樹HA材積"> 広葉樹HA材積</label>
       </div>
     </div>
 
@@ -385,6 +385,27 @@
             weight: 1, //細い線で、透明度0.0
             fillOpacity: 0.0,
           }),
+          "L_一体整備相当区域": (feature) => {
+            const value = feature.properties["L_一体整備相当区域"];
+            return {
+              color: value == 1 ? "yellow" : "gray",
+              weight: 1,//細い線で。該当しない場合は、透明度0.0
+              fillOpacity: value == 1 ? 0.4 : 0.0,
+            };
+          },
+          "L_施業履歴1_除間伐": (feature) => {
+            const value = feature.properties["L_施業履歴1_除間伐"];
+            let fillOpacity = 0.0;
+            if (value > 2005 && value < 2010) fillOpacity = 0.2;
+            else if (value >= 2010 && value < 2015) fillOpacity = 0.4;
+            else if (value >= 2015 && value < 2020) fillOpacity = 0.6;
+            else if (value >= 2020) fillOpacity = 0.8;
+            return {
+              color: "green",
+              weight: 0.1,
+              fillOpacity: fillOpacity,
+            };
+          },            
           "L_アカマツHA材積": (feature) => {
             const value = feature.properties["L_アカマツHA材積"];
             let fillOpacity = 0.0;
@@ -484,9 +505,9 @@
                     },
                   })
                   .bindPopup(
-                    `KEY_02：${getValue(feature.properties["KEY_02"])}<br />
-                     林班-小-施-枝：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}<br />
-                     面積：${getValue(feature.properties["L_面積_1"])}ha、　森林経営計画：${getValue(feature.properties["L_森林経営計画"])}<br />
+                    `林班名：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}、面積：${getValue(feature.properties["L_面積_1"])}ha<br />
+                     経営計画：${getValue(feature.properties["L_森林経営計画"])}、　一体整備相当：${getValue(feature.properties["L_一体整備相当区域"])}<br />
+                     徐間伐履歴：${getValue(feature.properties["L_施業履歴1_除間伐"])}、　その他履歴：${getValue(feature.properties["L_施業履歴1_その他"])}<br />
                      保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
                      ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
                      ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
