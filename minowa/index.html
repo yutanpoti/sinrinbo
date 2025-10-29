@@ -210,20 +210,22 @@
       z-index: 2000;
       justify-content: center;
       align-items: center;
+      font-size: 24px; /* ← モーダル全体の文字も大きめに */
     ">
       <div style="
         background: white;
         border-radius: 8px;
         padding: 20px;
-        width: 250px;
+        width: 280px; /* 少し広げて見やすく */
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       ">
-        <p><b>座標を入力してください</b></p>
-        <p style="font-size: 12px;">（例：35.681236, 139.767125）</p>
-        <input id="coordInput" type="text" placeholder="緯度, 経度" style="width:100%; padding:5px;"><br><br>
+        <p><b>座標を入力</b></p>
+        <p style="font-size: 24px;">（例：36.111111, 138.111111）</p>
+        <input id="coordInput" type="text" placeholder="緯度, 経度"
+          style="width:100%; padding:8px; font-size:24px; line-height:1.4; margin-top:4px;"><br><br>
         <div style="text-align:right;">
-          <button id="cancelBtn">取消</button>
-          <button id="moveBtn">移動</button>
+          <button id="cancelBtn" style="font-size:24px;">取消</button>
+          <button id="moveBtn" style="font-size:24px;">移動</button>
         </div>
       </div>
     </div>
