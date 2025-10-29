@@ -395,11 +395,19 @@
           },
           "L_施業履歴1_除間伐": (feature) => {
             const value = feature.properties["L_施業履歴1_除間伐"];
+            // 現在の年を取得
+            const currentYear = new Date().getFullYear();
+            // 基準年を動的に設定
+            const year20 = currentYear - 20; // 20年前
+            const year15 = currentYear - 15; // 15年前
+            const year10 = currentYear - 10; // 10年前
+            const year5  = currentYear - 5;  // 5年前
+            // 塗りの透明度を年ごとに設定
             let fillOpacity = 0.0;
-            if (value > 2005 && value < 2010) fillOpacity = 0.2;
-            else if (value >= 2010 && value < 2015) fillOpacity = 0.4;
-            else if (value >= 2015 && value < 2020) fillOpacity = 0.6;
-            else if (value >= 2020) fillOpacity = 0.8;
+            if (value > year20 && value < year15) fillOpacity = 0.2;
+            else if (value >= year15 && value < year10) fillOpacity = 0.4;
+            else if (value >= year10 && value < year5) fillOpacity = 0.6;
+            else if (value >= year5) fillOpacity = 0.8;
             return {
               color: "green",
               weight: 0.1,
