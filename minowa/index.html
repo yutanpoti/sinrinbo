@@ -786,7 +786,7 @@
 
           // クリップボードへコピー
           navigator.clipboard.writeText(text).then(() => {
-            alert(`中心座標をコピーしました！\n他の地図アプリに張り付けて使えます：\n${text}`);
+            alert(`中心座標をコピーしました：\n${text}\n\n他の地図アプリに貼り付けて使えます\n（検索、お気に入り登録、経路案内等）`);
           }).catch(err => {
             alert('コピーに失敗しました: ' + err);
           });
