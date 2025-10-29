@@ -236,7 +236,8 @@
       <label><input type="checkbox" id="cadastralLayerToggle"> 地籍図</label><br>
       <label><input type="checkbox" id="hazardLayerToggle"> ハザード</label><br>
       <label><input type="checkbox" id="viewpointLayerToggle"> 見どころ</label><br>
-      <label><input type="checkbox" id="roadLayerToggle"> 路網</label>
+      <label><input type="checkbox" id="heightLayerToggle"> 標高帯</label><br>
+      <label><input type="checkbox" id="roadLayerToggle"> 路網</label> 
     </div>
 
     <!-- 現在地追跡ボタン -->
@@ -487,7 +488,7 @@
         }
 
         // 4. 各FGBレイヤの定義
-        // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装
+        // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装。VER40でheightを追加。
         const layers = {
           // 4-1. 森林簿（forestLayer）
           forest: {
@@ -658,6 +659,36 @@
               }
             },
           },
+          // 4-6. 標高帯（heightLayer）
+          height: {
+            url: "https://yutanpoti.github.io/sinrinbo/FGB/height945_1063.fgb",
+            layerGroup: L.layerGroup(),
+            update: async function () {
+              this.layerGroup.clearLayers();
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+              for await (const feature of iter) {
+                // 属性['DN'] によって色分け
+                const layerValue = feature.properties["DN"];
+                let color;
+                switch (layerValue) {
+                  case 0:
+                    color = "red";
+                    break;
+                  case 1:
+                    color = "yellow";
+                    break;
+                  case 2:
+                    color = "blue";
+                    break;
+                  default:
+                    color = "black";
+                }
+                const style = { color: color, weight: 0.1, fillOpacity: 0.2 };
+                // ポップアップなし
+                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
+              }
+            },
+          },
         };
 
         // 5. マップ移動時などに各レイヤのデータを更新（更新頻度は1秒に1回に制限）
@@ -676,6 +707,9 @@
         const updateRoadLayerThrottled = _.throttle(() => {
           layers.road.update();
         }, 1000);
+        const updateHeightLayerThrottled = _.throttle(() => {
+          layers.height.update();
+        }, 1000);        
 
         // 初回更新：チェックされているレイヤのみ update() を実行
         if(document.getElementById("forestLayerToggle").checked) { layers.forest.update(); }
@@ -683,6 +717,7 @@
         if(document.getElementById("hazardLayerToggle").checked) { layers.hazard.update(); }
         if(document.getElementById("viewpointLayerToggle").checked) { layers.viewpoint.update(); }
         if(document.getElementById("roadLayerToggle").checked) { layers.road.update(); }
+        if(document.getElementById("heightLayerToggle").checked) { layers.height.update(); }
 
         // 地図移動時（moveend）の更新：チェックされているレイヤのみ update() を実行
         map.on("moveend", function() {
@@ -692,6 +727,8 @@
           if(document.getElementById("hazardLayerToggle").checked) { updateHazardLayerThrottled(); }
           if(document.getElementById("viewpointLayerToggle").checked) { updateViewpointLayerThrottled(); }
           if(document.getElementById("roadLayerToggle").checked) { updateRoadLayerThrottled(); }
+          if(document.getElementById("heightLayerToggle").checked) { updateHeightLayerThrottled(); }
+
         });
 
         // 6. ラジオボタン変更時は forestLayer のスタイル更新
@@ -742,6 +779,14 @@
             map.removeLayer(layers.road.layerGroup);
           }
         });
+        document.getElementById("heightLayerToggle").addEventListener("change", function () {
+          if (this.checked) {
+            layers.height.layerGroup.addTo(map);
+            layers.height.update();
+          } else {
+            map.removeLayer(layers.height.layerGroup);
+          }
+        });        
 
         // 8. スケールコントロールの追加
         L.control.scale({
