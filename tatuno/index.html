@@ -236,8 +236,7 @@
       <label><input type="checkbox" id="cadastralLayerToggle"> 地籍図</label><br>
       <label><input type="checkbox" id="hazardLayerToggle"> ハザード</label><br>
       <label><input type="checkbox" id="viewpointLayerToggle"> 見どころ</label><br>
-      <label><input type="checkbox" id="heightLayerToggle"> 標高帯</label><br>
-      <label><input type="checkbox" id="roadLayerToggle"> 路網</label> 
+      <label><input type="checkbox" id="roadLayerToggle"> 路網</label>
     </div>
 
     <!-- 現在地追跡ボタン -->
@@ -274,7 +273,7 @@
         let map = L.map("map", {
             minZoom: 10    // ズーム下限
         }).setView([35.983102, 137.987285], 16);//めも：辰野町役場
-        
+
         const baseMaps = {
           "地理院タイル淡色地図": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
             attribution:
@@ -396,19 +395,11 @@
           },
           "L_施業履歴1_除間伐": (feature) => {
             const value = feature.properties["L_施業履歴1_除間伐"];
-            // 現在の年を取得
-            const currentYear = new Date().getFullYear();
-            // 基準年を動的に設定
-            const year20 = currentYear - 20; // 20年前
-            const year15 = currentYear - 15; // 15年前
-            const year10 = currentYear - 10; // 10年前
-            const year5  = currentYear - 5;  // 5年前
-            // 塗りの透明度を年ごとに設定
             let fillOpacity = 0.0;
-            if (value > year20 && value < year15) fillOpacity = 0.2;
-            else if (value >= year15 && value < year10) fillOpacity = 0.4;
-            else if (value >= year10 && value < year5) fillOpacity = 0.6;
-            else if (value >= year5) fillOpacity = 0.8;
+            if (value > 2005 && value < 2010) fillOpacity = 0.2;
+            else if (value >= 2010 && value < 2015) fillOpacity = 0.4;
+            else if (value >= 2015 && value < 2020) fillOpacity = 0.6;
+            else if (value >= 2020) fillOpacity = 0.8;
             return {
               color: "green",
               weight: 0.1,
@@ -488,7 +479,7 @@
         }
 
         // 4. 各FGBレイヤの定義
-        // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装。VER40でheightを追加。
+        // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装
         const layers = {
           // 4-1. 森林簿（forestLayer）
           forest: {
@@ -659,36 +650,6 @@
               }
             },
           },
-          // 4-6. 標高帯（heightLayer）
-          height: {
-            url: "https://yutanpoti.github.io/sinrinbo/FGB/height945_1063.fgb",
-            layerGroup: L.layerGroup(),
-            update: async function () {
-              this.layerGroup.clearLayers();
-              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
-              for await (const feature of iter) {
-                // 属性['DN'] によって色分け
-                const layerValue = feature.properties["DN"];
-                let color;
-                switch (layerValue) {
-                  case 0:
-                    color = "red";
-                    break;
-                  case 1:
-                    color = "yellow";
-                    break;
-                  case 2:
-                    color = "blue";
-                    break;
-                  default:
-                    color = "black";
-                }
-                const style = { color: color, weight: 0.1, fillOpacity: 0.2 };
-                // ポップアップなし
-                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
-              }
-            },
-          },
         };
 
         // 5. マップ移動時などに各レイヤのデータを更新（更新頻度は1秒に1回に制限）
@@ -707,9 +668,6 @@
         const updateRoadLayerThrottled = _.throttle(() => {
           layers.road.update();
         }, 1000);
-        const updateHeightLayerThrottled = _.throttle(() => {
-          layers.height.update();
-        }, 1000);        
 
         // 初回更新：チェックされているレイヤのみ update() を実行
         if(document.getElementById("forestLayerToggle").checked) { layers.forest.update(); }
@@ -717,7 +675,6 @@
         if(document.getElementById("hazardLayerToggle").checked) { layers.hazard.update(); }
         if(document.getElementById("viewpointLayerToggle").checked) { layers.viewpoint.update(); }
         if(document.getElementById("roadLayerToggle").checked) { layers.road.update(); }
-        if(document.getElementById("heightLayerToggle").checked) { layers.height.update(); }
 
         // 地図移動時（moveend）の更新：チェックされているレイヤのみ update() を実行
         map.on("moveend", function() {
@@ -727,8 +684,6 @@
           if(document.getElementById("hazardLayerToggle").checked) { updateHazardLayerThrottled(); }
           if(document.getElementById("viewpointLayerToggle").checked) { updateViewpointLayerThrottled(); }
           if(document.getElementById("roadLayerToggle").checked) { updateRoadLayerThrottled(); }
-          if(document.getElementById("heightLayerToggle").checked) { updateHeightLayerThrottled(); }
-
         });
 
         // 6. ラジオボタン変更時は forestLayer のスタイル更新
@@ -779,14 +734,73 @@
             map.removeLayer(layers.road.layerGroup);
           }
         });
-        document.getElementById("heightLayerToggle").addEventListener("change", function () {
-          if (this.checked) {
-            layers.height.layerGroup.addTo(map);
-            layers.height.update();
-          } else {
-            map.removeLayer(layers.height.layerGroup);
+
+        // ======================================
+        // 10. XYZタイルオーバーレイ（標高帯・もりぞん）左別枠配置版
+        // ======================================
+
+        // 読み込みたいレイヤのURLを定義。（追加するときはここにカンマ区切りで足していけばOK。行が増えていく。）
+        const xyzOverlays = {
+          "標高帯": "https://yutanpoti.github.io/sinrinbo/XYZ/height_945_1063/{z}/{x}/{y}.png",
+         // "もりぞん": "https://yutanpoti.github.io/sinrinbo/XYZ/morizon_minamiminowa/{z}/{x}/{y}.png"
+        };
+
+        // 実際に地図に追加されたレイヤを管理するオブジェクト
+        const activeXYZ = {};
+
+        // Leafletコントロールとして右下に配置
+        const xyzControl = L.control({ position: 'topleft' });
+
+        xyzControl.onAdd = function () {
+          // コントロール用のdivを作成
+          const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+          div.style.background = 'white';
+          div.style.padding = '10px';
+          div.style.border = '1px solid #ccc';
+          div.style.borderRadius = '6px';
+          div.style.fontSize = '24px';
+          div.style.lineHeight = '1.8';
+          div.style.marginTop = '225px'; // 左上端から少しずらす
+
+          // 各レイヤ用のチェックボックスを作成
+          for (const name in xyzOverlays) {
+            const id = `chk-xyz-${name}`;
+            div.innerHTML += `
+              <label style="display:block; margin:4px 0;">
+                <input type="checkbox" id="${id}" style="margin-right:6px;"> ${name}
+              </label>`;
           }
-        });        
+
+          return div;
+        };
+
+        // コントロールを地図に追加
+        xyzControl.addTo(map);
+
+        // 各チェックボックスに動作を設定
+        for (const name in xyzOverlays) {
+          const checkbox = document.getElementById(`chk-xyz-${name}`);
+          checkbox.addEventListener('change', function () {
+            if (this.checked) {
+              // ✅ チェックON時：レイヤを作成して追加
+              activeXYZ[name] = L.tileLayer(xyzOverlays[name], {
+                opacity: 0.5,          // 半透明（50%）
+                maxZoom: 19,           // 地図全体の最大ズーム
+                minNativeZoom: 10,     // データの最小ズーム
+                maxNativeZoom: 12,     // データの最大ズーム
+                zIndex: 1000,          // ベースマップより前に描画
+                crossOrigin: true
+              }).addTo(map);
+            } else {
+              // ❌ チェックOFF時：レイヤ削除（通信も停止）
+              if (activeXYZ[name]) {
+                map.removeLayer(activeXYZ[name]);
+                activeXYZ[name] = null;
+              }
+            }
+          });
+        }
+
 
         // 8. スケールコントロールの追加
         L.control.scale({
