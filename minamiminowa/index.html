@@ -864,17 +864,53 @@
 
 
         // -------------------------------
-        // 中心座標をコピーする処理
+        // 中心座標をコピーする処理（改良版）
         // -------------------------------
         document.getElementById('copyBtn').addEventListener('click', function() {
           const center = map.getCenter(); // 地図の現在中心座標を取得
           const lat = center.lat.toFixed(6); // 緯度（小数点6桁まで）
           const lng = center.lng.toFixed(6); // 経度（小数点6桁まで）
           const text = `${lat}, ${lng}`;     // Googleマップ形式で整形
+          const googleMapUrl = `https://www.google.com/maps?q=${lat},${lng}`; // GoogleマップのURLを作成
 
           // クリップボードへコピー
           navigator.clipboard.writeText(text).then(() => {
-            alert(`中心座標をコピーしました：\n${text}\n\n他の地図アプリに貼り付けて使えます\n（検索、お気に入り登録、経路案内等）`);
+
+            // ✅ カスタムモーダルを作成して表示
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.background = 'rgba(0,0,0,0.3)';
+            modal.style.zIndex = '3000';
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+
+            // モーダル内の内容
+            modal.innerHTML = `
+              <div style="background:white; padding:20px; border-radius:8px; font-size:24px; text-align:center; width:320px;">
+                <p><b>中心座標をコピーしました</b></p>
+                <p>${text}</p>
+                <p style="margin-top:15px;">
+                  <a href="${googleMapUrl}" target="_blank" style="color:blue; text-decoration:underline;">
+                    Googleマップで開く
+                  </a>
+                </p>
+                <button id="closeCopyModal" style="margin-top:20px; font-size:24px; padding:6px 20px;">閉じる</button>
+              </div>
+            `;
+
+            // モーダルをbodyに追加
+            document.body.appendChild(modal);
+
+            // 「閉じる」ボタンでモーダルを消す
+            document.getElementById('closeCopyModal').addEventListener('click', () => {
+              document.body.removeChild(modal);
+            });
+
           }).catch(err => {
             alert('コピーに失敗しました: ' + err);
           });
