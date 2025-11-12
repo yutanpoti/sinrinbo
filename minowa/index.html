@@ -232,10 +232,10 @@
 
     <!-- レイヤコントロール -->
     <div class="layer-controls">
-      <label class="forest-label"><input type="checkbox" id="forestLayerToggle" checked> 森林簿</label><br>
+      <label class="forest-label"><input type="checkbox" id="forestLayerToggle"> 森林簿</label><br>
       <label><input type="checkbox" id="cadastralLayerToggle"> 地籍図</label><br>
       <label><input type="checkbox" id="hazardLayerToggle"> ハザード</label><br>
-      <label><input type="checkbox" id="viewpointLayerToggle"> 見どころ</label><br>
+      <label><input type="checkbox" id="viewpointLayerToggle" checked> 見どころ</label><br>
       <label><input type="checkbox" id="roadLayerToggle"> 路網</label>
     </div>
 
@@ -244,10 +244,10 @@
 
     <!-- 背景地図切り替えのボタン -->
     <div id="basemap-controls" style="position: absolute; top: 5px; right: 10px; background: white; padding: 10px; z-index: 1000; border: 1px solid #ccc; border-radius: 5px;">
-      <label><input type="radio" name="basemap" value="地理院タイル淡色地図" checked> 地理院淡色地図</label><br>
+      <label><input type="radio" name="basemap" value="地理院タイル淡色地図"> 地理院淡色地図</label><br>
       <label><input type="radio" name="basemap" value="ベースマップ航空写真"> 航空写真</label><br>
       <label><input type="radio" name="basemap" value="1970年代写真"> 1970年代写真</label><br>
-      <label><input type="radio" name="basemap" value="長野県CS立体図"> 長野県CS立体図</label><br>
+      <label><input type="radio" name="basemap" value="長野県CS立体図" checked> 長野県CS立体図</label><br>
       <label><input type="radio" name="basemap" value="シームレス地質図V2"> シームレス地質図</label>
     </div>
 
@@ -272,7 +272,7 @@
         // 1. 地図の初期化とベースマップの設定
         let map = L.map("map", {
             minZoom: 10    // ズーム下限
-        }).setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
+        }).setView([35.945780, 138.006831], 16);//めも：北小河内中心に変更
         
         const baseMaps = {
           "地理院タイル淡色地図": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
@@ -304,7 +304,7 @@
         };
 
         // 初期のベースマップを設定
-        baseMaps["地理院タイル淡色地図"].addTo(map);
+        baseMaps["長野県CS立体図"].addTo(map);
 
         // ベースマップの切り替え機能
         document.getElementById('basemap-controls').addEventListener('change', (e) => {
@@ -485,7 +485,7 @@
           forest: {
             url: "https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202509_minowa_mini.fgb",
             // 初期表示はチェックONのため、layerGroupをすぐにマップへ追加
-            layerGroup: L.layerGroup().addTo(map),
+            layerGroup: L.layerGroup(),
             update: async function () {
               this.layerGroup.clearLayers();
               const selectedStyle = document.querySelector('input[name="style"]:checked').value;
@@ -595,7 +595,7 @@
           // 4-4. 見どころ（viewpointLayer）
           viewpoint: {
             url: "https://yutanpoti.github.io/sinrinbo/FGB/viewpoint.fgb",
-            layerGroup: L.layerGroup(),
+            layerGroup: L.layerGroup().addTo(map),
             update: async function () {
               this.layerGroup.clearLayers();
               const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
