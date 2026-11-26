@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title>箕輪ちいもりず_2025.9森林簿</title>
+    <title>箕輪ちいもりず_2026.9森林簿</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="index.css" />
     <link rel="stylesheet" href="table.css" />
@@ -288,9 +288,9 @@
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_一体整備相当区域"> 一体整備相当区域</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種・保安林</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="伐跡あり"> 伐跡あり</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業履歴1_除間伐"> 除間伐履歴</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="人工林あり"> 人工林あり</label>
       </div>
     </div>
 
@@ -298,7 +298,8 @@
       document.addEventListener("DOMContentLoaded", async () => {
         // 1. 地図の初期化とベースマップの設定
         let map = L.map("map", {
-            minZoom: 10    // ズーム下限
+            minZoom: 10,   // ズーム下限
+            maxZoom: 20    // ズーム上限
         }).setView([35.9462335, 137.9968015], 16);//めも：北小河内中心に変更
 
         // ======================================
@@ -333,30 +334,35 @@
               pane: "pane-basemap",
               attribution:
               '<a href="https://www.gsi.go.jp/development/ichiran.html#pale">地理院タイル淡色地図</a>&copy; <a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">国土地理院</a>|<a href="https://www.pref.nagano.lg.jp/rinsei/sangyo/ringyo/seibi/shisan.html">長野県森林情報</a>&copy; <a href="https://www.pref.nagano.lg.jp/index.html">長野県</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 5,   // タイルが存在する最小ズーム
           }),
           "ベースマップ航空写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
               pane: "pane-basemap",
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 14,   // タイルが存在する最小ズーム
           }),
           "1970年代写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg', {
               pane: "pane-basemap",
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真（1970年代）</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 17,  // タイルが存在する最大ズーム
               minNativeZoom: 10,   // タイルが存在する最小ズーム
           }),
-          "長野県CS立体図": L.tileLayer('https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png', {
+          "長野県CS立体図": L.tileLayer('https://rinya-tiles.geospatial.jp/csmap_067_2025/{z}/{x}/{y}.webp', {
               pane: "pane-basemap",
-              attribution: '<a href="https://www.geospatial.jp/">長野県CS立体図</a>',
+              attribution: '<a href="https://www.geospatial.jp/ckan/dataset/inatani_067">林野庁加工 CS立体図</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 8,   // タイルが存在する最小ズーム
           }),
           "シームレス地質図V2": L.tileLayer('https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png', {
               pane: "pane-basemap",
               attribution: '<a href="https://gbank.gsj.jp/seamless/index.html">産総研 地質図</a>&copy; <a href="https://www.gsj.jp/">産総研</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 13,  // タイルが存在する最大ズーム
               minNativeZoom: 0,   // タイルが存在する最小ズーム
           })
@@ -491,32 +497,54 @@
               fillOpacity: fillOpacity,
             };
           },
-          "L_ヒノキHA材積": (feature) => {
-            const value = feature.properties["L_ヒノキHA材積"];
-            let fillOpacity = 0.0;
-            if (value > 0 && value < 100) fillOpacity = 0.2;
-            else if (value >= 100 && value < 200) fillOpacity = 0.4;
-            else if (value >= 200 && value < 300) fillOpacity = 0.6;
-            else if (value >= 300) fillOpacity = 0.8;
-            return {
-              color: "darkgreen",
-              weight: 0.1,
-              fillOpacity: fillOpacity,
-            };
+
+          "伐跡あり": (feature) => {
+            const p = feature.properties || {};
+            const hasBasseki = [
+              p["L_林種_1"],
+              p["L_林種_2"],
+              p["L_林種_3"]
+            ].some(value => String(value ?? "").includes("伐跡"));
+            if (hasBasseki) {
+              return {
+                color: "purple",
+                weight: 0.7,
+                fillColor: "purple",
+                fillOpacity: 0.7,
+              };
+            } else {
+              return {
+                color: "gray",
+                weight: 0.2,
+                fill: false,
+              };
+            }
           },
-          "L_スギHA材積": (feature) => {
-            const value = feature.properties["L_スギHA材積"];
-            let fillOpacity = 0.0;
-            if (value > 0 && value < 100) fillOpacity = 0.2;
-            else if (value >= 100 && value < 200) fillOpacity = 0.4;
-            else if (value >= 200 && value < 300) fillOpacity = 0.6;
-            else if (value >= 300) fillOpacity = 0.8;
-            return {
-              color: "blue",
-              weight: 0.1,
-              fillOpacity: fillOpacity,
-            };
+
+          "人工林あり": (feature) => {
+            const p = feature.properties || {};
+            const hasJinkorin = [
+              p["L_林種_1"],
+              p["L_林種_2"],
+              p["L_林種_3"]
+            ].some(value => String(value ?? "").includes("人工"));
+
+            if (hasJinkorin) {
+              return {
+                color: "green",
+                weight: 0.5,
+                fillColor: "green",
+                fillOpacity: 0.4,
+              };
+            } else {
+              return {
+                color: "gray",
+                weight: 0.2,
+                fill: false,
+              };
+            }
           },
+
           "L_広葉樹HA材積": (feature) => {
             const value = feature.properties["L_広葉樹HA材積"];
             let fillOpacity = 0.0;
@@ -537,12 +565,25 @@
           return value ?? defaultValue;
         }
 
+        // ポップアップで１～６の数値に応じて施業種が表示されるようにする関数。
+        function get施業種表示(value) {
+          const labels = {
+            "1": "1・皆伐",
+            "2": "2・10年延長",
+            "3": "3・長伐期",
+            "4": "4・複層",
+            "5": "5・択伐",
+            "6": "6・特定広葉樹",
+          };
+          return labels[String(value)] ?? getValue(value);
+        }
+
         // 4. 各FGBレイヤの定義
         // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装
         const layers = {
           // 4-1. 森林簿（forestLayer）
           forest: {
-            url: "https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202509_minowa_mini.fgb",
+            url: "https://yutanpoti.github.io/sinrinbo/minowa/sinrinbo202609_minowa_mini.fgb",
             // 初期表示はチェックONのため、layerGroupをすぐにマップへ追加
             layerGroup: L.layerGroup().addTo(map),
             update: async function () {
@@ -563,27 +604,26 @@
                       e.target.setStyle(style);
                     },
                   })
+
+
                   .bindPopup(
                     `林班名：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}、面積：${getValue(feature.properties["L_面積_1"])}ha<br />
-                     経営計画：${getValue(feature.properties["L_森林経営計画"])}、　一体整備相当：${getValue(feature.properties["L_一体整備相当区域"])}<br />
-                     徐間伐履歴：${getValue(feature.properties["L_施業履歴1_除間伐"])}、　その他履歴：${getValue(feature.properties["L_施業履歴1_その他"])}<br />
-                     保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
-                     ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
-                     ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
-                     施業種：${getValue(feature.properties["L_施業種"])}（皆・10・長・複・択）<br />
-                     効率区域：${getValue(feature.properties["L_効率的施業区域"])}、植栽更新：${getValue(feature.properties["L_植栽更新森林"])}<br />
-                     樹種_1：${getValue(feature.properties["L_樹種_1"])}、
-                     ${getValue(feature.properties["L_林齢_1"])}年、
-                     ${getValue(feature.properties["L_材積_1"])}m3、
-                     (${getValue(feature.properties["L_HA材積_1"])}m3/ha)<br />
-                     樹種_2：${getValue(feature.properties["L_樹種_2"])}、
-                     ${getValue(feature.properties["L_林齢_2"])}年、
-                     ${getValue(feature.properties["L_材積_2"])}m3、
-                     (${getValue(feature.properties["L_HA材積_2"])}m3/ha)<br />
-                     樹種_3：${getValue(feature.properties["L_樹種_3"])}、
-                     ${getValue(feature.properties["L_林齢_3"])}年、
-                     ${getValue(feature.properties["L_材積_3"])}m3、
-                     (${getValue(feature.properties["L_HA材積_3"])}m3/ha)<br />`
+                    経営計画：${getValue(feature.properties["L_森林経営計画"])}、　一体整備相当：${getValue(feature.properties["L_一体整備相当区域"])}<br />
+                    効率区：${getValue(feature.properties["L_効率的施業区域"])}、植栽区：${getValue(feature.properties["L_植栽更新森林"])}、鳥獣区：${getValue(feature.properties["L_鳥獣害防止区域"])}<br />
+                    徐間伐履歴：${getValue(feature.properties["L_施業履歴1_除間伐"])}、　その他履歴：${getValue(feature.properties["L_施業履歴1_その他"])}<br />
+                    保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
+                    ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
+                    ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
+                    施業種：${get施業種表示(feature.properties["L_施業種"])}<br />
+                    樹種_1：${String(getValue(feature.properties["L_林種_1"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_1"])},
+                    ${getValue(feature.properties["L_林齢_1"])}年,
+                    ${getValue(feature.properties["L_材積_1"])}m3<br />
+                    樹種_2：${String(getValue(feature.properties["L_林種_2"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_2"])},
+                    ${getValue(feature.properties["L_林齢_2"])}年,
+                    ${getValue(feature.properties["L_材積_2"])}m3<br />
+                    樹種_3：${String(getValue(feature.properties["L_林種_3"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_3"])},
+                    ${getValue(feature.properties["L_林齢_3"])}年,
+                    ${getValue(feature.properties["L_材積_3"])}m3<br />`
                   )
                   .addTo(this.layerGroup);
               }
@@ -1009,7 +1049,7 @@
               activeXYZ[name] = L.tileLayer(xyzOverlays[name], {
                 pane: "pane-xyz",
                 opacity: 0.5,          // 半透明（50%）
-                maxZoom: 19,           // 地図全体の最大ズーム
+                maxZoom: 20,           // 地図全体の最大ズーム
                 minNativeZoom: 10,     // データの最小ズーム
                 maxNativeZoom: 12,     // データの最大ズーム
                 zIndex: 1000,          // ベースマップより前に描画
