@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title>南箕輪ちいもりず_2025.9森林簿</title>
+    <title>南箕輪ちいもりず_2026.9森林簿</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="index.css" />
     <link rel="stylesheet" href="table.css" />
@@ -167,6 +167,33 @@
         z-index: 1000;
       }
 
+     /* ======================================
+     通行止めラベル（RoadClosed）
+     ====================================== */
+      .road-closed-label {
+        font-size: 14px;
+        font-weight: bold;
+        color: red;
+        background: white;
+        border: 1px solid red;
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap; /* 折り返し防止 */
+        z-index: 1001;
+      }
+
+      /* 路網ポップアップ */
+      .road-popup {
+        font-size: 14px;          /* 文字を小さく */
+        line-height: 1.4;
+        max-width: 200px;         /* 枠の最大幅 */
+        word-wrap: break-word;   /* 長文折り返し */
+        white-space: normal;
+      }
+      /* 路線名だけ強調 */
+      .road-popup-name {
+        font-weight: bold;
+      }
 
     </style>
   </head>
@@ -261,9 +288,9 @@
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_一体整備相当区域"> 一体整備相当区域</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_カラマツHA材積"> カラマツHA材積</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業種"> 施業種・保安林</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_ヒノキHA材積"> ヒノキHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="伐跡あり"> 伐跡あり</label>
         <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_施業履歴1_除間伐"> 除間伐履歴</label>
-        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="L_スギHA材積"> スギHA材積</label>
+        <label style="flex: 1 1 45%;"><input type="radio" name="style" value="人工林あり"> 人工林あり</label>
       </div>
     </div>
 
@@ -271,33 +298,71 @@
       document.addEventListener("DOMContentLoaded", async () => {
         // 1. 地図の初期化とベースマップの設定
         let map = L.map("map", {
-            minZoom: 10    // ズーム下限
+            minZoom: 10,   // ズーム下限
+            maxZoom: 20    // ズーム上限
         }).setView([35.8836, 137.9419], 16);//めも：大芝中心
-        
+
+        // ======================================
+        // Pane定義（全レイヤ共通）
+        // ======================================
+        map.createPane("pane-basemap");
+        map.getPane("pane-basemap").style.zIndex = 100;
+
+        map.createPane("pane-xyz");
+        map.getPane("pane-xyz").style.zIndex = 400;
+
+        map.createPane("pane-forest");
+        map.getPane("pane-forest").style.zIndex = 500;
+
+        map.createPane("pane-cadastral");
+        map.getPane("pane-cadastral").style.zIndex = 600;
+
+        map.createPane("pane-hazard");
+        map.getPane("pane-hazard").style.zIndex = 700;
+
+        map.createPane("pane-road");
+        map.getPane("pane-road").style.zIndex = 800;
+
+        map.createPane("pane-viewpoint");
+        map.getPane("pane-viewpoint").style.zIndex = 900;
+
+        map.createPane("pane-road-closed");
+        map.getPane("pane-road-closed").style.zIndex = 1000;
+  
         const baseMaps = {
           "地理院タイル淡色地図": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
-            attribution:
+              pane: "pane-basemap",
+              attribution:
               '<a href="https://www.gsi.go.jp/development/ichiran.html#pale">地理院タイル淡色地図</a>&copy; <a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">国土地理院</a>|<a href="https://www.pref.nagano.lg.jp/rinsei/sangyo/ringyo/seibi/shisan.html">長野県森林情報</a>&copy; <a href="https://www.pref.nagano.lg.jp/index.html">長野県</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 5,   // タイルが存在する最小ズーム
           }),
           "ベースマップ航空写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
+              pane: "pane-basemap",
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 14,   // タイルが存在する最小ズーム
           }),
           "1970年代写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/gazo1/{z}/{x}/{y}.jpg', {
+              pane: "pane-basemap",
               attribution: '<a href="https://www.gsi.go.jp/common/000225818.pdf">国土地理院 航空写真（1970年代）</a>&copy; <a href="https://www.gsi.go.jp/">国土地理院</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 17,  // タイルが存在する最大ズーム
               minNativeZoom: 10,   // タイルが存在する最小ズーム
           }),
-          "長野県CS立体図": L.tileLayer('https://tile.geospatial.jp/CS/VER2/{z}/{x}/{y}.png', {
-              attribution: '<a href="https://www.geospatial.jp/">長野県CS立体図</a>',
+          "長野県CS立体図": L.tileLayer('https://rinya-tiles.geospatial.jp/csmap_067_2025/{z}/{x}/{y}.webp', {
+              pane: "pane-basemap",
+              attribution: '<a href="https://www.geospatial.jp/ckan/dataset/inatani_067">林野庁加工 CS立体図</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 18,  // タイルが存在する最大ズーム
               minNativeZoom: 8,   // タイルが存在する最小ズーム
           }),
           "シームレス地質図V2": L.tileLayer('https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/{z}/{y}/{x}.png', {
+              pane: "pane-basemap",
               attribution: '<a href="https://gbank.gsj.jp/seamless/index.html">産総研 地質図</a>&copy; <a href="https://www.gsj.jp/">産総研</a>',
+              maxZoom: 20,        // 地図として表示する最大ズーム
               maxNativeZoom: 13,  // タイルが存在する最大ズーム
               minNativeZoom: 0,   // タイルが存在する最小ズーム
           })
@@ -432,32 +497,54 @@
               fillOpacity: fillOpacity,
             };
           },
-          "L_ヒノキHA材積": (feature) => {
-            const value = feature.properties["L_ヒノキHA材積"];
-            let fillOpacity = 0.0;
-            if (value > 0 && value < 100) fillOpacity = 0.2;
-            else if (value >= 100 && value < 200) fillOpacity = 0.4;
-            else if (value >= 200 && value < 300) fillOpacity = 0.6;
-            else if (value >= 300) fillOpacity = 0.8;
-            return {
-              color: "darkgreen",
-              weight: 0.1,
-              fillOpacity: fillOpacity,
-            };
+
+          "伐跡あり": (feature) => {
+            const p = feature.properties || {};
+            const hasBasseki = [
+              p["L_林種_1"],
+              p["L_林種_2"],
+              p["L_林種_3"]
+            ].some(value => String(value ?? "").includes("伐跡"));
+            if (hasBasseki) {
+              return {
+                color: "purple",
+                weight: 0.7,
+                fillColor: "purple",
+                fillOpacity: 0.7,
+              };
+            } else {
+              return {
+                color: "gray",
+                weight: 0.2,
+                fill: false,
+              };
+            }
           },
-          "L_スギHA材積": (feature) => {
-            const value = feature.properties["L_スギHA材積"];
-            let fillOpacity = 0.0;
-            if (value > 0 && value < 100) fillOpacity = 0.2;
-            else if (value >= 100 && value < 200) fillOpacity = 0.4;
-            else if (value >= 200 && value < 300) fillOpacity = 0.6;
-            else if (value >= 300) fillOpacity = 0.8;
-            return {
-              color: "blue",
-              weight: 0.1,
-              fillOpacity: fillOpacity,
-            };
+
+          "人工林あり": (feature) => {
+            const p = feature.properties || {};
+            const hasJinkorin = [
+              p["L_林種_1"],
+              p["L_林種_2"],
+              p["L_林種_3"]
+            ].some(value => String(value ?? "").includes("人工"));
+
+            if (hasJinkorin) {
+              return {
+                color: "green",
+                weight: 0.5,
+                fillColor: "green",
+                fillOpacity: 0.4,
+              };
+            } else {
+              return {
+                color: "gray",
+                weight: 0.2,
+                fill: false,
+              };
+            }
           },
+
           "L_広葉樹HA材積": (feature) => {
             const value = feature.properties["L_広葉樹HA材積"];
             let fillOpacity = 0.0;
@@ -478,12 +565,25 @@
           return value ?? defaultValue;
         }
 
+        // ポップアップで１～６の数値に応じて施業種が表示されるようにする関数。
+        function get施業種表示(value) {
+          const labels = {
+            "1": "1・皆伐",
+            "2": "2・10年延長",
+            "3": "3・長伐期",
+            "4": "4・複層",
+            "5": "5・択伐",
+            "6": "6・特定広葉樹",
+          };
+          return labels[String(value)] ?? getValue(value);
+        }
+
         // 4. 各FGBレイヤの定義
         // ※ここでは、forestLayer、cadastralLayer、hazardLayer、viewpointLayer、roadLayer の5件を実装
         const layers = {
           // 4-1. 森林簿（forestLayer）
           forest: {
-            url: "https://yutanpoti.github.io/sinrinbo/minamiminowa/sinrinbo202509_minamiminowa_mini.fgb",
+            url: "https://yutanpoti.github.io/sinrinbo/minamiminowa/sinrinbo202609_minamiminowa_mini.fgb",
             // 初期表示はチェックONのため、layerGroupをすぐにマップへ追加
             layerGroup: L.layerGroup().addTo(map),
             update: async function () {
@@ -492,7 +592,7 @@
               const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
               for await (const feature of iter) {
                 const style = styles[selectedStyle](feature);
-                L.geoJSON(feature, { style: style })
+                L.geoJSON(feature, { pane: "pane-forest",style: style })
                   .on({
                     mouseover: function (e) {
                       e.target.setStyle({
@@ -504,27 +604,26 @@
                       e.target.setStyle(style);
                     },
                   })
+
+
                   .bindPopup(
                     `林班名：${getValue(feature.properties["L_林班"])}-${getValue(feature.properties["L_小班"])}-${getValue(feature.properties["L_施業番号"])}-${getValue(feature.properties["L_枝番"])}、面積：${getValue(feature.properties["L_面積_1"])}ha<br />
-                     経営計画：${getValue(feature.properties["L_森林経営計画"])}、　一体整備相当：${getValue(feature.properties["L_一体整備相当区域"])}<br />
-                     徐間伐履歴：${getValue(feature.properties["L_施業履歴1_除間伐"])}、　その他履歴：${getValue(feature.properties["L_施業履歴1_その他"])}<br />
-                     保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
-                     ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
-                     ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
-                     施業種：${getValue(feature.properties["L_施業種"])}（皆・10・長・複・択）<br />
-                     効率区域：${getValue(feature.properties["L_効率的施業区域"])}、植栽更新：${getValue(feature.properties["L_植栽更新森林"])}<br />
-                     樹種_1：${getValue(feature.properties["L_樹種_1"])}、
-                     ${getValue(feature.properties["L_林齢_1"])}年、
-                     ${getValue(feature.properties["L_材積_1"])}m3、
-                     (${getValue(feature.properties["L_HA材積_1"])}m3/ha)<br />
-                     樹種_2：${getValue(feature.properties["L_樹種_2"])}、
-                     ${getValue(feature.properties["L_林齢_2"])}年、
-                     ${getValue(feature.properties["L_材積_2"])}m3、
-                     (${getValue(feature.properties["L_HA材積_2"])}m3/ha)<br />
-                     樹種_3：${getValue(feature.properties["L_樹種_3"])}、
-                     ${getValue(feature.properties["L_林齢_3"])}年、
-                     ${getValue(feature.properties["L_材積_3"])}m3、
-                     (${getValue(feature.properties["L_HA材積_3"])}m3/ha)<br />`
+                    経営計画：${getValue(feature.properties["L_森林経営計画"])}、　一体整備相当：${getValue(feature.properties["L_一体整備相当区域"])}<br />
+                    効率区：${getValue(feature.properties["L_効率的施業区域"])}、植栽区：${getValue(feature.properties["L_植栽更新森林"])}、鳥獣区：${getValue(feature.properties["L_鳥獣害防止区域"])}<br />
+                    徐間伐履歴：${getValue(feature.properties["L_施業履歴1_除間伐"])}、　その他履歴：${getValue(feature.properties["L_施業履歴1_その他"])}<br />
+                    保安林：${getValue(feature.properties["L_保安林1"])}・${getValue(feature.properties["L_施業方法_保安林1"])},
+                    ${getValue(feature.properties["L_保安林2"])}・${getValue(feature.properties["L_施業方法_保安林2"])},
+                    ${getValue(feature.properties["L_保安林3"])}・${getValue(feature.properties["L_施業方法_保安林3"])}<br />
+                    施業種：${get施業種表示(feature.properties["L_施業種"])}<br />
+                    樹種_1：${String(getValue(feature.properties["L_林種_1"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_1"])},
+                    ${getValue(feature.properties["L_林齢_1"])}年,
+                    ${getValue(feature.properties["L_材積_1"])}m3<br />
+                    樹種_2：${String(getValue(feature.properties["L_林種_2"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_2"])},
+                    ${getValue(feature.properties["L_林齢_2"])}年,
+                    ${getValue(feature.properties["L_材積_2"])}m3<br />
+                    樹種_3：${String(getValue(feature.properties["L_林種_3"])).slice(0, 1)}・${getValue(feature.properties["L_樹種_3"])},
+                    ${getValue(feature.properties["L_林齢_3"])}年,
+                    ${getValue(feature.properties["L_材積_3"])}m3<br />`
                   )
                   .addTo(this.layerGroup);
               }
@@ -547,7 +646,7 @@
                                       丁目名：${getValue(feature.properties["丁目名"])}<br />
                                       小字名：${getValue(feature.properties["小字名"])}<br />
                                       地番：${getValue(feature.properties["地番"])}`;
-                L.geoJSON(feature, { style: style })
+                L.geoJSON(feature, { pane: "pane-cadastral", style: style })
                   .bindPopup(popupContent)
                   .addTo(this.layerGroup);
               }
@@ -581,14 +680,14 @@
                     color = "purple";
                     break;
                   case "santi_ryuushutu_bufffgb":
-                    color = "brown";
+                    color = "orange";
                     break;
                   default:
                     color = "black";
                 }
                 const style = { color: color, weight: 3, fillOpacity: 0.1 };
                 // ハザードはポップアップなし
-                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
+                L.geoJSON(feature, { pane: "pane-hazard",style: style }).addTo(this.layerGroup);
               }
             },
           },
@@ -612,6 +711,7 @@
                     };
                     const color = categoryColorMap[feature.properties.category] || "white";
                     return L.circleMarker(latlng, {
+                      pane: "pane-viewpoint",
                       radius: 24,           // やや大きめの円
                       fillColor: color,     // categoryに応じた色
                       color: color,
@@ -636,20 +736,179 @@
               }
             },
           },
+          
           // 4-5. 路網（roadLayer）
           road: {
             url: "https://yutanpoti.github.io/sinrinbo/FGB/road.fgb",
             layerGroup: L.layerGroup(),
             update: async function () {
               this.layerGroup.clearLayers();
+
               const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
               for await (const feature of iter) {
-                // 灰色のシンプルな線で表示
-                const style = { color: "gray", weight: 1, fillOpacity: 0.0 };
-                L.geoJSON(feature, { style: style }).addTo(this.layerGroup);
+
+                // ------------------------------
+                // ① 黒色の下地線（縁取り用）
+                // ------------------------------
+                const outlineStyle = {
+                  color: "#000000",    // 黒
+                  weight: 7,           // 外側（太め）
+                  opacity: 1,
+                  lineCap: "round",
+                  lineJoin: "round"
+                };
+
+                // ------------------------------
+                // ② ライトグレーの上線（本体）
+                // ------------------------------
+                const mainStyle = {
+                  color: "#cccccc",    // ライトグレー
+                  weight: 5,           // 内側（少し細い）
+                  opacity: 1,
+                  lineCap: "round",
+                  lineJoin: "round"
+                };
+
+                // ポップアップ内容（両方で共通）
+                const props = feature.properties || {};
+                // 属性加工
+                const rosenName = props.ROSEN_NAME ?? "－";
+                // TYPE_CLASS：先頭4文字を削除
+                const typeClass = props.TYPE_CLASS
+                  ? props.TYPE_CLASS.substring(4)
+                  : "－";
+                // MIN_WIDTH：単位 m を付加
+                const minWidth = props.MIN_WIDTH !== null && props.MIN_WIDTH !== undefined
+                  ? `${props.MIN_WIDTH}m`
+                  : "－";
+                const popupHtml = `
+                  <div class="road-popup">
+                    <div class="road-popup-name">${rosenName}</div>
+                    <div>${typeClass}</div>
+                    <div>${minWidth}</div>
+                  </div>
+                `;
+
+                // 黒縁（下）
+                const outlineLayer = L.geoJSON(feature, {
+                  pane: "pane-road",
+                  style: outlineStyle
+                });
+
+                // ライトグレー本体（上）
+                const mainLayer = L.geoJSON(feature, {
+                  pane: "pane-road",
+                  style: mainStyle,
+                  onEachFeature: function (feature, layer) {
+                    layer.bindPopup(popupHtml);
+                  }
+                });
+
+                // 描画順が重要（必ず黒 → グレー）
+                outlineLayer.addTo(this.layerGroup);
+                mainLayer.addTo(this.layerGroup);
               }
             },
           },
+
+
+
+          // 4-6. 通行止め情報（roadClosedLayer）
+          roadClosed: {
+            url: "https://yutanpoti.github.io/sinrinbo/FGB/RoadClosed.fgb",
+            layerGroup: L.layerGroup(),
+            update: async function () {
+              this.layerGroup.clearLayers();
+
+              const zoom = map.getZoom(); // ← ラベル表示判定用
+              const iter = flatgeobuf.deserialize(this.url, fgBoundingBox());
+
+              for await (const feature of iter) {
+
+                // ----------------------------------
+                // 将来拡張用：
+                // ・通行再開日が入っていれば非表示
+                // if (feature.properties["通行再開日"]) continue;
+                // ----------------------------------
+
+                const latlng = [
+                  feature.geometry.coordinates[1],
+                  feature.geometry.coordinates[0]
+                ];
+
+                // 赤い × 印（SVGをdivIconで表現）
+                const icon = L.divIcon({
+                  className: "road-closed-icon",
+                  html: `
+                    <svg width="28" height="28" viewBox="0 0 28 28">
+                      <line x1="4" y1="4" x2="24" y2="24"
+                        stroke="red" stroke-width="4"/>
+                      <line x1="24" y1="4" x2="4" y2="24"
+                        stroke="red" stroke-width="4"/>
+                    </svg>
+                  `,
+                  iconSize: [28, 28],
+                  iconAnchor: [14, 14]
+                });
+
+                const marker = L.marker(latlng, {
+                  icon,
+                  pane: "pane-road-closed",
+                  zIndexOffset: 1000
+                });
+
+                // ----------------------------------
+                // ズームが十分近いときだけラベル表示
+                // zoom >= 17 ≒ 1/5000 程度
+                // ----------------------------------
+                if (zoom >= 17 && feature.properties["name"]) {
+                  marker.bindTooltip(feature.properties["name"], {
+                    permanent: true,
+                    direction: "top",
+                    offset: [0, -18],
+                    className: "road-closed-label"
+                  });
+                }
+
+                // ポップアップ（最低限）
+                marker.bindPopup(
+                  `<b>${getValue(feature.properties["name"])}</b><br/>
+                  ${getValue(feature.properties["detail"])}`
+                );
+
+                marker.addTo(this.layerGroup);
+              }
+            }
+          },
+        };
+
+        // ======================================
+        // 路網グループ（路網＋通行止め）
+        // ======================================
+        const roadGroup = {
+          layers: [
+            layers.road,
+            layers.roadClosed
+          ],
+
+          enable: function () {
+            this.layers.forEach(l => {
+              l.layerGroup.addTo(map);
+              l.update();
+            });
+          },
+
+          disable: function () {
+            this.layers.forEach(l => {
+              map.removeLayer(l.layerGroup);
+            });
+          },
+
+          update: function () {
+            this.layers.forEach(l => {
+              l.update();
+            });
+          }
         };
 
         // 5. マップ移動時などに各レイヤのデータを更新（更新頻度は1秒に1回に制限）
@@ -668,13 +927,17 @@
         const updateRoadLayerThrottled = _.throttle(() => {
           layers.road.update();
         }, 1000);
+        const updateRoadGroupThrottled = _.throttle(() => {
+          roadGroup.update();
+        }, 1000);
+
 
         // 初回更新：チェックされているレイヤのみ update() を実行
         if(document.getElementById("forestLayerToggle").checked) { layers.forest.update(); }
         if(document.getElementById("cadastralLayerToggle").checked) { layers.cadastral.update(); }
         if(document.getElementById("hazardLayerToggle").checked) { layers.hazard.update(); }
         if(document.getElementById("viewpointLayerToggle").checked) { layers.viewpoint.update(); }
-        if(document.getElementById("roadLayerToggle").checked) { layers.road.update(); }
+        if(document.getElementById("roadLayerToggle").checked) { roadGroup.enable(); }
 
         // 地図移動時（moveend）の更新：チェックされているレイヤのみ update() を実行
         map.on("moveend", function() {
@@ -683,7 +946,7 @@
           if(document.getElementById("cadastralLayerToggle").checked) { updateCadastralLayerThrottled(); }
           if(document.getElementById("hazardLayerToggle").checked) { updateHazardLayerThrottled(); }
           if(document.getElementById("viewpointLayerToggle").checked) { updateViewpointLayerThrottled(); }
-          if(document.getElementById("roadLayerToggle").checked) { updateRoadLayerThrottled(); }
+          if(document.getElementById("roadLayerToggle").checked) { updateRoadGroupThrottled(); }
         });
 
         // 6. ラジオボタン変更時は forestLayer のスタイル更新
@@ -728,12 +991,12 @@
         });
         document.getElementById("roadLayerToggle").addEventListener("change", function () {
           if (this.checked) {
-            layers.road.layerGroup.addTo(map);
-            layers.road.update();
+            roadGroup.enable();
           } else {
-            map.removeLayer(layers.road.layerGroup);
+            roadGroup.disable();
           }
         });
+
 
         // ======================================
         // 10. XYZタイルオーバーレイ（標高帯・もりぞん）左別枠配置版
@@ -784,8 +1047,9 @@
             if (this.checked) {
               // ✅ チェックON時：レイヤを作成して追加
               activeXYZ[name] = L.tileLayer(xyzOverlays[name], {
+                pane: "pane-xyz",
                 opacity: 0.5,          // 半透明（50%）
-                maxZoom: 19,           // 地図全体の最大ズーム
+                maxZoom: 20,           // 地図全体の最大ズーム
                 minNativeZoom: 10,     // データの最小ズーム
                 maxNativeZoom: 12,     // データの最大ズーム
                 zIndex: 1000,          // ベースマップより前に描画
